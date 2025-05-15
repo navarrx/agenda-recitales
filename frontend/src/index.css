@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-neutral-50 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-all duration-300;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow-md hover:translate-y-[-1px];
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-600 hover:bg-secondary-700 text-white shadow-sm hover:shadow-md hover:translate-y-[-1px];
+  }
+  
+  .btn-accent {
+    @apply bg-accent-600 hover:bg-accent-700 text-white shadow-sm hover:shadow-md hover:translate-y-[-1px];
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300;
+  }
+  
+  .card {
+    @apply bg-white dark:bg-neutral-800 rounded-xl shadow-soft hover:shadow-hover transition-all duration-300 ease-in-out overflow-hidden;
+  }
+  
+  .input {
+    @apply rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-200;
+  }
+  
+  .link {
+    @apply text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium transition-colors duration-200;
+  }
+}
+
+/* Animations */
+.fade-in {
+  @apply animate-fade-in;
+}
+
+.slide-up {
+  @apply animate-slide-up;
+}
+
+.slide-down {
+  @apply animate-slide-down;
+}
+
+/* Transitions */
+.page-transition {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.hover-lift {
+  @apply transition-transform duration-300 hover:translate-y-[-4px];
+}
+
+.hover-scale {
+  @apply transition-transform duration-300 hover:scale-105;
+}
+
+/* Background Animation */
+@keyframes moveBackground {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 100px 100px;
+  }
+}
+
+/* Shadow Variants */
+.shadow-soft-up {
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Custom styles can be added here */ 
