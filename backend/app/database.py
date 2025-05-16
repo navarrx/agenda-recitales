@@ -7,31 +7,20 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Get database connection parameters from environment variables
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "agenda_db")
+# Get database URL from environment variable
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Construct the DATABASE_URL or get it directly from environment
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-)
+# If DATABASE_URL is not set, construct it from individual parameters
+if not DATABASE_URL:
+    DB_USER = os.getenv("POSTGRES_USER", "postgres")
+    DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
+    DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
+    DB_PORT = os.getenv("POSTGRES_PORT", "5432")
+    DB_NAME = os.getenv("POSTGRES_DB", "agenda_db")
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# If PostgreSQL connection fails, we can use SQLite as fallback
-try:
-    engine = create_engine(DATABASE_URL)
-    # Test connection
-    with engine.connect() as conn:
-        pass
-    print(f"Successfully connected to database: PostgreSQL at {DB_HOST}:{DB_PORT}/{DB_NAME}")
-except Exception as e:
-    print(f"Error connecting to PostgreSQL: {e}")
-    print("Falling back to SQLite database")
-    DATABASE_URL = "sqlite:///./events.db"
-    engine = create_engine(DATABASE_URL)
+# Create engine
+engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
