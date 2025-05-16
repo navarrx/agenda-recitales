@@ -19,14 +19,9 @@ app = FastAPI(
 )
 
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
-# Eliminar caracteres problemáticos y espacios en blanco
-cleaned_str = ''.join(c for c in allowed_origins_str if c.isprintable()).strip()
-origins = []
-if cleaned_str:
-    if "," in cleaned_str:
-        origins = [origin.strip() for origin in cleaned_str.split(",") if origin.strip()]
-    else:
-        origins = [cleaned_str]
+# Eliminar explícitamente el punto y coma al final y otros caracteres problemáticos
+cleaned_str = allowed_origins_str.replace(";", "").strip()
+origins = [cleaned_str] if cleaned_str else []
 
 print(f"Raw ALLOWED_ORIGINS: '{allowed_origins_str}'")
 print(f"Cleaned ALLOWED_ORIGINS: '{cleaned_str}'")
