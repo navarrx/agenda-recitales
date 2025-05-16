@@ -18,8 +18,8 @@ app = FastAPI(
     version="0.1.0"
 )
 
-allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
-origins = [allowed_origins_str] if allowed_origins_str else []
+# Temporalmente hardcodeamos la URL para probar
+origins = ["https://agenda-recitales-production.up.railway.app"]
 
 print(f"Origins for CORS: {origins}")
 
