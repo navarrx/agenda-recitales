@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Event, EventFilters, EventListResponse, PaginationParams } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://agenda-backend-production.up.railway.app');
 console.log('[API_URL]', API_URL);
 
 const apiClient = axios.create({
