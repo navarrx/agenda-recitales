@@ -1,7 +1,13 @@
 #!/bin/bash
 
+# Wait for database to be ready
+echo "Waiting for database to be ready..."
+sleep 10
+
 # Run database migrations
+echo "Running database migrations..."
 alembic upgrade head
 
 # Start the application
-uvicorn app.main:app --host 0.0.0.0 --port $PORT 
+echo "Starting application..."
+uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 
