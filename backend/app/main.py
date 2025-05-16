@@ -19,22 +19,17 @@ app = FastAPI(
 )
 
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
-# Eliminar explícitamente el punto y coma al final y otros caracteres problemáticos
-cleaned_str = allowed_origins_str.replace(";", "").strip()
-# Dividir por punto y coma en caso de múltiples orígenes y limpiar cada uno
-origins = [origin.strip() for origin in cleaned_str.split(";") if origin.strip()]
+origins = [allowed_origins_str] if allowed_origins_str else []
 
-print(f"Raw ALLOWED_ORIGINS: '{allowed_origins_str}'")
-print(f"Cleaned ALLOWED_ORIGINS: '{cleaned_str}'")
-print(f"Processed origins: {origins}")
+print(f"Origins for CORS: {origins}")
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,              # ✅ Orígenes permitidos
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],                # ✅ Todos los métodos (GET, POST, etc.)
-    allow_headers=["*"],                # ✅ Todos los headers
+    allow_methods=["*"],
+    allow_headers=["*"],
     expose_headers=["*"]
 )
 
