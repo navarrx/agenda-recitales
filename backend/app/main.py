@@ -18,32 +18,19 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Configure CORS
-# Get allowed origins from environment variable or use defaults
-allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
-origins = allowed_origins_str.split(",")
-
-# Add production domains
-production_domains = [
-    "https://agenda-recitales-production.up.railway.app",
-    "https://agenda-frontend-production.up.railway.app",
-    "https://agenda-recitales-frontend-production.up.railway.app"
-]
-
-# Combine all origins
-origins.extend(production_domains)
-
-# Remove duplicates and empty strings
-origins = list(set(filter(None, origins)))
+# Parse allowed origins from environment variable
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
+origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
 
 print("Allowed CORS origins:", origins)
 
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins,              # ✅ Orígenes permitidos
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],                # ✅ Todos los métodos (GET, POST, etc.)
+    allow_headers=["*"],                # ✅ Todos los headers
     expose_headers=["*"]
 )
 
@@ -57,4 +44,4 @@ def read_root():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "8000"))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True) 
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
