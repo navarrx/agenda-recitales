@@ -2,20 +2,14 @@ import axios from 'axios';
 import { Event, EventFilters, EventListResponse, PaginationParams } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-// Ensure HTTPS for Railway or any remote URL
-const baseURL = API_URL.startsWith('http://') && !API_URL.includes('localhost')
-  ? API_URL.replace('http://', 'https://')
-  : API_URL;
+console.log('[API_URL]', API_URL);
 
 const apiClient = axios.create({
-  baseURL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
-
-console.log('[API_URL original]', API_URL);
-console.log('[baseURL procesada]', baseURL);
 
 export const getEvents = async (
   filters: EventFilters = {},
