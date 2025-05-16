@@ -1,27 +1,25 @@
 import axios from 'axios';
 import { Event, EventFilters, EventListResponse, PaginationParams } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://agenda-backend-production.up.railway.app');
+const API_URL = import.meta.env.VITE_API_URL || 'https://agenda-recitales-backend-production.up.railway.app';
 console.log('[API_URL]', API_URL);
 
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   }
 });
 
 // Interceptor para logging y manejo de errores
 apiClient.interceptors.request.use((config) => {
-  // Asegurarnos de que la URL use HTTPS
-  if (config.baseURL && !config.baseURL.startsWith('https://')) {
-    config.baseURL = config.baseURL.replace('http://', 'https://');
-  }
-  
   console.log('Request final:', {
     baseURL: config.baseURL,
     url: config.url,
-    fullURL: `${config.baseURL}${config.url}`
+    fullURL: `${config.baseURL}${config.url}`,
+    method: config.method,
+    headers: config.headers
   });
   
   return config;
@@ -31,7 +29,12 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error('API Error:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message
+    });
     return Promise.reject(error);
   }
 );
