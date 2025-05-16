@@ -23,9 +23,20 @@ app = FastAPI(
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
 origins = allowed_origins_str.split(",")
 
-# During development, you might want to allow all origins
-if os.getenv("ENV") == "development" or "*" in origins:
-    origins = ["*"]
+# Add production domains
+production_domains = [
+    "https://agenda-recitales-production.up.railway.app",
+    "https://agenda-frontend-production.up.railway.app",
+    "https://agenda-recitales-frontend-production.up.railway.app"
+]
+
+# Combine all origins
+origins.extend(production_domains)
+
+# Remove duplicates and empty strings
+origins = list(set(filter(None, origins)))
+
+print("Allowed CORS origins:", origins)
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,6 +44,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Include routers
