@@ -21,7 +21,8 @@ app = FastAPI(
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
 # Eliminar explícitamente el punto y coma al final y otros caracteres problemáticos
 cleaned_str = allowed_origins_str.replace(";", "").strip()
-origins = [cleaned_str] if cleaned_str else []
+# Dividir por punto y coma en caso de múltiples orígenes y limpiar cada uno
+origins = [origin.strip() for origin in cleaned_str.split(";") if origin.strip()]
 
 print(f"Raw ALLOWED_ORIGINS: '{allowed_origins_str}'")
 print(f"Cleaned ALLOWED_ORIGINS: '{cleaned_str}'")
