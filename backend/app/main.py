@@ -18,10 +18,17 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Temporalmente hardcodeamos la URL para probar
-origins = ["https://agenda-recitales-production.up.railway.app"]
+# Configuración de CORS con múltiples orígenes para pruebas
+origins = [
+    "https://agenda-recitales-production.up.railway.app",
+    "http://localhost:3000",
+    "http://localhost:8000"
+]
 
-print(f"Origins for CORS: {origins}")
+print("=== CORS CONFIGURATION ===")
+print(f"Number of origins: {len(origins)}")
+print(f"Origins list: {origins}")
+print("========================")
 
 # Configure CORS
 app.add_middleware(
