@@ -3,6 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
+import time
+from sqlalchemy.exc import OperationalError
 
 # Load environment variables from .env file
 load_dotenv()
@@ -19,8 +21,39 @@ if not DATABASE_URL:
     DB_NAME = os.getenv("POSTGRES_DB", "agenda_db")
     DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# Create engine
-engine = create_engine(DATABASE_URL)
+print(f"Connecting to database at: {DATABASE_URL}")
+
+# Create engine with connection pool settings
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,  # Enable connection health checks
+    pool_recycle=300,    # Recycle connections after 5 minutes
+    pool_size=5,         # Maximum number of connections to keep
+    max_overflow=10,     # Maximum number of connections that can be created beyond pool_size
+    echo=True            # Enable SQL query logging
+)
+
+# Retry connection logic
+def get_engine():
+    max_retries = 5
+    retry_delay = 5
+    
+    for attempt in range(max_retries):
+        try:
+            # Test the connection
+            with engine.connect() as conn:
+                conn.execute("SELECT 1")
+            return engine
+        except OperationalError as e:
+            if attempt < max_retries - 1:
+                print(f"Database connection attempt {attempt + 1} failed. Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print("Failed to connect to database after multiple attempts")
+                raise e
+
+# Get a working engine
+engine = get_engine()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
