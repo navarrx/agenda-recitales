@@ -8,14 +8,12 @@ const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-  },
-  httpsAgent: new (require('https').Agent)({
-    rejectUnauthorized: false
-  })
+  }
 });
 
 // Interceptor para logging y manejo de errores
 apiClient.interceptors.request.use((config) => {
+  // Asegurarnos de que la URL use HTTPS
   if (config.baseURL && !config.baseURL.startsWith('https://')) {
     config.baseURL = config.baseURL.replace('http://', 'https://');
   }
