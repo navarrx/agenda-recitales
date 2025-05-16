@@ -9,10 +9,17 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  httpsAgent: new (require('https').Agent)({
+    rejectUnauthorized: false
+  })
 });
 
-// Simplified interceptor that just logs the request details
+// Interceptor para logging y manejo de errores
 apiClient.interceptors.request.use((config) => {
+  if (config.baseURL && !config.baseURL.startsWith('https://')) {
+    config.baseURL = config.baseURL.replace('http://', 'https://');
+  }
+  
   console.log('Request final:', {
     baseURL: config.baseURL,
     url: config.url,
@@ -21,6 +28,15 @@ apiClient.interceptors.request.use((config) => {
   
   return config;
 });
+
+// Interceptor para manejar errores
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
 
 export const getEvents = async (
   filters: EventFilters = {},
