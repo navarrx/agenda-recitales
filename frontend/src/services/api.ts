@@ -4,7 +4,9 @@ import { Event, EventFilters, EventListResponse, PaginationParams } from '../typ
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 // Ensure HTTPS in production
 const baseURL = import.meta.env.PROD 
-  ? API_URL.replace('http://', 'https://')
+  ? API_URL.startsWith('http://') 
+    ? API_URL.replace('http://', 'https://')
+    : API_URL
   : API_URL;
 
 const apiClient = axios.create({
