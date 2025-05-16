@@ -5,6 +5,7 @@ from .database import engine
 from .routers import events
 import os
 from dotenv import load_dotenv
+from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 
 # Load environment variables
 load_dotenv()
@@ -18,6 +19,7 @@ app = FastAPI(
     version="0.1.0"
 )
 
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 # Configure CORS
 # Get allowed origins from environment variable or use defaults
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
