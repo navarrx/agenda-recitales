@@ -18,11 +18,19 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Parse allowed origins from environment variable
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
-origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+# Eliminar caracteres problemáticos y espacios en blanco
+cleaned_str = ''.join(c for c in allowed_origins_str if c.isprintable()).strip()
+origins = []
+if cleaned_str:
+    if "," in cleaned_str:
+        origins = [origin.strip() for origin in cleaned_str.split(",") if origin.strip()]
+    else:
+        origins = [cleaned_str]
 
-print("Allowed CORS origins:", origins)
+print(f"Raw ALLOWED_ORIGINS: '{allowed_origins_str}'")
+print(f"Cleaned ALLOWED_ORIGINS: '{cleaned_str}'")
+print(f"Processed origins: {origins}")
 
 # Configure CORS
 app.add_middleware(
