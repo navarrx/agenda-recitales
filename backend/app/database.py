@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
@@ -40,9 +40,10 @@ def get_engine():
     
     for attempt in range(max_retries):
         try:
-            # Test the connection
+            # Test the connection using text() for SQL query
             with engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1"))
+                conn.commit()
             return engine
         except OperationalError as e:
             if attempt < max_retries - 1:
