@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
-import { useEventStore } from '../../store/eventStore';
 import { getEvents, deleteEvent } from '../../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
