@@ -24,19 +24,51 @@ def init_migrations():
     
     # Create alembic.ini if it doesn't exist
     if not os.path.exists('alembic.ini'):
-        config = Config()
-        config.set_main_option('script_location', 'migrations')
-        config.set_main_option('sqlalchemy.url', DATABASE_URL)
-        config.set_main_option('file_template', '%%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d%%(second).2d_%%(rev)s_%%(slug)s')
-        config.set_main_option('timezone', 'UTC')
-        config.set_main_option('truncate_slug_length', '40')
-        config.set_main_option('revision_environment', 'false')
-        config.set_main_option('sourceless', 'false')
-        config.set_main_option('version_locations', '%(here)s/migrations/versions')
-        config.set_main_option('output_encoding', 'utf-8')
-        
         with open('alembic.ini', 'w') as f:
-            config.write(f)
+            f.write("""[alembic]
+script_location = migrations
+sqlalchemy.url = %(DATABASE_URL)s
+file_template = %%(year)d%%(month).2d%%(day).2d_%%(hour).2d%%(minute).2d%%(second).2d_%%(rev)s_%%(slug)s
+truncate_slug_length = 40
+revision_environment = false
+sourceless = false
+version_locations = %(here)s/migrations/versions
+output_encoding = utf-8
+
+[loggers]
+keys = root,sqlalchemy,alembic
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARN
+handlers = console
+qualname =
+
+[logger_sqlalchemy]
+level = WARN
+handlers =
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+datefmt = %H:%M:%S
+""")
     
     # Create initial migration
     config = Config('alembic.ini')

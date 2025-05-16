@@ -54,10 +54,9 @@ def create_event(db: Session, event: schemas.EventCreate):
 def update_event(db: Session, event_id: int, event: schemas.EventUpdate):
     db_event = db.query(models.Event).filter(models.Event.id == event_id).first()
     if db_event:
-        update_data = event.dict(exclude_unset=True)
-        for key, value in update_data.items():
+        for key, value in event.dict(exclude_unset=True).items():
             setattr(db_event, key, value)
-        db_event.updated_at = datetime.utcnow()
+        db_event.updated_at = func.now()
         db.commit()
         db.refresh(db_event)
     return db_event
