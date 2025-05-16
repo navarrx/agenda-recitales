@@ -11,6 +11,30 @@ const apiClient = axios.create({
   },
 });
 
+// Añadir el interceptor aquí
+apiClient.interceptors.request.use((config) => {
+  // Asegurarse de que baseURL use HTTPS en producción
+  if (config.baseURL && config.baseURL.startsWith('http://') && !import.meta.env.DEV) {
+    console.log('Forzando HTTPS en baseURL:', config.baseURL);
+    config.baseURL = config.baseURL.replace('http://', 'https://');
+  }
+  
+  // Asegurarse de que la URL completa use HTTPS en producción
+  if (config.url && config.url.startsWith('http://') && !import.meta.env.DEV) {
+    console.log('Forzando HTTPS en URL:', config.url);
+    config.url = config.url.replace('http://', 'https://');
+  }
+  
+  // Añadir más logs para depuración
+  console.log('Request final:', {
+    baseURL: config.baseURL,
+    url: config.url,
+    fullURL: `${config.baseURL}${config.url}`
+  });
+  
+  return config;
+});
+
 export const getEvents = async (
   filters: EventFilters = {},
   pagination: PaginationParams = { skip: 0, limit: 12 }
