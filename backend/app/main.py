@@ -18,16 +18,17 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Configuración de CORS con múltiples orígenes para pruebas
-origins = [
+# Configuración de CORS usando una tupla en lugar de una lista
+origins = (
     "https://agenda-recitales-production.up.railway.app",
     "http://localhost:3000",
     "http://localhost:8000"
-]
+)
 
 print("=== CORS CONFIGURATION ===")
+print(f"Type of origins: {type(origins)}")
 print(f"Number of origins: {len(origins)}")
-print(f"Origins list: {origins}")
+print(f"Origins tuple: {origins}")
 print("========================")
 
 # Configure CORS
