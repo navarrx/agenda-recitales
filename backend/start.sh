@@ -8,6 +8,10 @@ sleep 10
 echo "Running database migrations..."
 alembic upgrade head
 
+# Initialize database with sample data
+echo "Initializing database with sample data..."
+python init_db.py <<< "s"
+
 # Start the application
 echo "Starting application..."
 uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 

@@ -24,6 +24,12 @@ export default defineConfig({
   preview: {
     port: parseInt(process.env.PORT || '3000'),
     host: true,
-    allowedHosts: ['healthcheck.railway.app', 'localhost', '127.0.0.1']
+    allowedHosts: [
+      'healthcheck.railway.app',
+      'localhost',
+      '127.0.0.1',
+      'agenda-frontend-production.up.railway.app',
+      '*.up.railway.app'
+    ]
   }
 }) 
