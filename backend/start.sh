@@ -4,10 +4,10 @@
 echo "Waiting for database to be ready..."
 sleep 30
 
-# Initialize alembic if migrations directory doesn't exist
-if [ ! -d "migrations" ]; then
-    echo "Initializing alembic..."
-    alembic init migrations
+# Initialize migrations if needed
+if [ ! -d "migrations/versions" ] || [ -z "$(ls -A migrations/versions)" ]; then
+    echo "Initializing migrations..."
+    python init_migrations.py
 fi
 
 # Run database migrations
