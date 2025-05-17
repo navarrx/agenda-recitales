@@ -37,6 +37,9 @@ if "https://agenda-recitales-production.up.railway.app" not in ALLOWED_ORIGINS:
 # También permitir el dominio backend para pruebas de desarrollo
 ALLOWED_ORIGINS.append("https://agenda-recitales-backend-production.up.railway.app")
 
+# Permitir localhost para desarrollo
+ALLOWED_ORIGINS.extend(["http://localhost:3000", "http://localhost:5173", "http://localhost:8000"])
+
 # Loguear para depuración
 logger.info(f"CORS origins configurados: {ALLOWED_ORIGINS}")
 logger.info(f"PORT configurado en la variable de entorno: {os.getenv('PORT', 'No definido')}")
@@ -44,7 +47,7 @@ logger.info(f"PORT configurado en la variable de entorno: {os.getenv('PORT', 'No
 # Configure CORS - asegúrate de que esto se haga antes de incluir los routers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],  # Temporalmente permitir todos los orígenes para debugging
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -58,6 +61,10 @@ async def check_cors_headers(request: Request, call_next):
     logger.info(f"Recibida solicitud a: {request.url.path}")
     logger.info(f"Método: {request.method}")
     logger.info(f"Origin: {request.headers.get('origin', 'No origin header')}")
+    
+    # Añadir más logs para depurar la ruta de la solicitud
+    logger.info(f"Request path: {request.url.path}")
+    logger.info(f"Request query params: {request.query_params}")
     
     response = await call_next(request)
     
@@ -77,12 +84,53 @@ async def check_cors_headers(request: Request, call_next):
     
     return response
 
-# Include routers
+# Include routers - Asegúrate de que esto se hace correctamente
 app.include_router(events.router)
+
+# Añadir un endpoint explícito para /events para asegurar que funciona
+@app.get("/events")
+def read_events_direct(request: Request):
+    """Endpoint directo para /events que redirige al router"""
+    logger.info(f"GET /events request received directamente en main.py")
+    logger.info(f"Redirigiendo a router de events...")
+    # Esta función debe redirigir a la implementación en el enrutador
+    from .routers.events import read_events_root
+    from .database import get_db
+    
+    # Obtener una sesión de base de datos
+    db = next(get_db())
+    
+    # Extraer parámetros de la solicitud
+    params = dict(request.query_params)
+    skip = int(params.get("skip", 0))
+    limit = int(params.get("limit", 100))
+    genre = params.get("genre")
+    city = params.get("city")
+    date_from = params.get("date_from")
+    date_to = params.get("date_to")
+    search = params.get("search")
+    
+    # Llamar a la función del enrutador
+    return read_events_root(
+        request=request,
+        skip=skip,
+        limit=limit,
+        genre=genre,
+        city=city,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+        db=db
+    )
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Agenda de Recitales API"}
+
+@app.get("/events-test")
+def test_events_endpoint():
+    """Endpoint para verificar que las rutas GET funcionan correctamente"""
+    return {"message": "Events test endpoint is working"}
 
 @app.get("/cors-test")
 def test_cors(request: Request):
