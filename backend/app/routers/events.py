@@ -18,11 +18,10 @@ router = APIRouter(
 def read_events_root(
     request: Request,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 12,  # Cambiado a 12 para coincidir con el frontend
     genre: Optional[str] = None,
     city: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    date: Optional[date] = None,  # Nuevo parámetro date
     search: Optional[str] = None,
     db: Session = Depends(database.get_db)
 ):
@@ -31,8 +30,12 @@ def read_events_root(
     """
     # Log para depurar
     logger.info(f"GET /events request received (root route)")
-    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, city={city}")
+    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, city={city}, date={date}")
     logger.info(f"Headers: {dict(request.headers)}")
+    
+    # Si se proporciona una fecha específica, usarla como date_from y date_to
+    date_from = date
+    date_to = date
     
     events = crud.get_events(
         db, 
@@ -50,11 +53,10 @@ def read_events_root(
 def read_events(
     request: Request,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 12,  # Cambiado a 12 para coincidir con el frontend
     genre: Optional[str] = None,
     city: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    date: Optional[date] = None,  # Nuevo parámetro date
     search: Optional[str] = None,
     db: Session = Depends(database.get_db)
 ):
@@ -63,8 +65,12 @@ def read_events(
     """
     # Log para depurar
     logger.info(f"GET /events/ request received (with trailing slash)")
-    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, city={city}")
+    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, city={city}, date={date}")
     logger.info(f"Headers: {dict(request.headers)}")
+    
+    # Si se proporciona una fecha específica, usarla como date_from y date_to
+    date_from = date
+    date_to = date
     
     events = crud.get_events(
         db, 

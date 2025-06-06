@@ -47,7 +47,7 @@ logger.info(f"PORT configurado en la variable de entorno: {os.getenv('PORT', 'No
 # Configure CORS - asegúrate de que esto se haga antes de incluir los routers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporalmente permitir todos los orígenes para debugging
+    allow_origins=["*"],  # Permitir todos los orígenes para el embedding
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -62,10 +62,6 @@ async def check_cors_headers(request: Request, call_next):
     logger.info(f"Método: {request.method}")
     logger.info(f"Origin: {request.headers.get('origin', 'No origin header')}")
     
-    # Añadir más logs para depurar la ruta de la solicitud
-    logger.info(f"Request path: {request.url.path}")
-    logger.info(f"Request query params: {request.query_params}")
-    
     response = await call_next(request)
     
     # Loguear los headers para depuración
@@ -75,12 +71,13 @@ async def check_cors_headers(request: Request, call_next):
     # Si no hay headers CORS y existe un Origin, añadirlos manualmente
     if "access-control-allow-origin" not in response.headers and request.headers.get("origin"):
         origin = request.headers.get("origin")
-        if origin in ALLOWED_ORIGINS or "*" in ALLOWED_ORIGINS:
-            logger.info(f"Añadiendo manualmente headers CORS para origen: {origin}")
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "*"
+        logger.info(f"Añadiendo manualmente headers CORS para origen: {origin}")
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        # Permitir embedding en cualquier sitio
+        response.headers["Content-Security-Policy"] = "frame-ancestors *"
     
     return response
 

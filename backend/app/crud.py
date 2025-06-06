@@ -37,9 +37,18 @@ def get_events(
     total = query.count()
     
     # Order by date and apply pagination
-    events = query.order_by(models.Event.date).offset(skip).limit(limit).all()
+    events = query.order_by(models.Event.date).offset(skip).limit(limit + 1).all()
     
-    return {"items": events, "total": total}
+    # Check if there are more results
+    has_more = len(events) > limit
+    if has_more:
+        events = events[:-1]  # Remove the extra item we fetched
+    
+    return {
+        "items": events,
+        "total": total,
+        "hasMore": has_more
+    }
 
 def get_event(db: Session, event_id: int):
     return db.query(models.Event).filter(models.Event.id == event_id).first()

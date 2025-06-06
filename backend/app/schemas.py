@@ -45,4 +45,8 @@ class Event(EventBase):
 
 class EventList(BaseModel):
     items: List[Event]
-    total: int 
+    total: int
+    hasMore: bool
+
+    class Config:
+        orm_mode = True 

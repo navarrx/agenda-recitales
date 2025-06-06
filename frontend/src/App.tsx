@@ -4,6 +4,7 @@ import EventsPage from './pages/events/EventsPage';
 import EventDetailPage from './pages/events/EventDetailPage';
 import AdminPage from './pages/admin/AdminPage';
 import EventFormPage from './pages/admin/EventFormPage';
+import EmbeddedAgenda from '@/pages/EmbeddedAgenda';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/admin/events/new" element={<EventFormPage />} />
       <Route path="/admin/events/:id" element={<EventFormPage />} />
+      <Route path="/embed" element={<EmbeddedAgenda />} />
     </Routes>
   );
 }
