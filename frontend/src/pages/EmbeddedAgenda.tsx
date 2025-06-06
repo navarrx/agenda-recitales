@@ -544,8 +544,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           .load-more-button {
             padding: 0.75rem 2rem;
             background: transparent;
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
+            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
             border-radius: 9999px;
             font-size: 0.875rem;
             font-weight: 600;
@@ -563,8 +563,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           }
 
           .load-more-button:not(:disabled):hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
+            border-color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'};
             transform: translateY(-2px);
           }
 
@@ -585,8 +585,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           .loading-spinner {
             width: 1.25rem;
             height: 1.25rem;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #ffffff;
+            border: 2px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'};
+            border-top-color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
             border-radius: 50%;
             animation: spin 1s linear infinite;
           }
