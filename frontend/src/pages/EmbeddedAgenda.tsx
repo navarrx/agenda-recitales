@@ -62,7 +62,10 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         setLoading(true);
         const params = new URLSearchParams({
           skip: '0',
-          limit: ITEMS_PER_PAGE.toString()
+          limit: ITEMS_PER_PAGE.toString(),
+          ...(selectedGenre && { genre: selectedGenre }),
+          ...(selectedCity && { city: selectedCity }),
+          ...(selectedDate && { date: selectedDate.toISOString().split('T')[0] })
         });
 
         const response = await fetch(`${import.meta.env.VITE_API_URL}/events?${params}`);
@@ -90,7 +93,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     };
 
     fetchEvents();
-  }, []);
+  }, [selectedGenre, selectedCity, selectedDate]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -218,12 +221,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
       const matchesCity = !selectedCity || event.city === selectedCity;
       const matchesDate = !selectedDate || new Date(event.date).toDateString() === selectedDate.toDateString();
       
-      const eventDate = new Date(event.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      eventDate.setHours(0, 0, 0, 0);
-      
-      return matchesSearch && matchesGenre && matchesCity && matchesDate && eventDate >= today;
+      return matchesSearch && matchesGenre && matchesCity && matchesDate;
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, displayLimit);
@@ -253,20 +251,20 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             padding: 0.75rem 1rem 0.75rem 2.5rem;
             border-radius: 9999px;
             border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
-            background: ${themeParam === 'dark' ? 'transparent' : 'rgba(0, 0, 0, 0.05)'};
+            background: ${themeParam === 'dark' ? 'transparent' : '#ffffff'};
             color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
             font-size: 0.875rem;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+          }
+
+          .search-bar::placeholder {
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'};
           }
 
           .search-bar:focus {
             outline: none;
-            border-color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'};
-            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
-          }
-
-          .search-bar::placeholder {
-            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'};
+            border-color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
+            box-shadow: 0 0 0 3px ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
           }
 
           .search-icon {
@@ -276,13 +274,13 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             transform: translateY(-50%);
             width: 1.25rem;
             height: 1.25rem;
-            color: rgba(255, 255, 255, 0.6);
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'};
             pointer-events: none;
             transition: color 0.3s ease;
           }
 
           .search-bar:focus + .search-icon {
-            color: #ffffff;
+            color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
           }
 
           .filters-container {
