@@ -30,6 +30,13 @@
             margin: 5px;
             padding: 5px;
         }
+        .debug-info {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -54,11 +61,18 @@
         <h2>Agenda Embebida:</h2>
         <iframe 
             id="agendaFrame"
-            src="http://localhost:3000/embed"
+            src="https://agenda-recitales-production.up.railway.app/embed"
             width="100%" 
             height="600px" 
             frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
         ></iframe>
+    </div>
+
+    <div class="debug-info">
+        <h3>Información de depuración:</h3>
+        <div id="debugContent"></div>
     </div>
 
     <script>
@@ -68,7 +82,7 @@
             const city = document.getElementById('cityInput').value;
             const genre = document.getElementById('genreInput').value;
 
-            let url = 'http://localhost:3000/embed?';
+            let url = 'https://agenda-recitales-production.up.railway.app/embed?';
             const params = new URLSearchParams();
             
             if (theme) params.append('theme', theme);
@@ -76,8 +90,37 @@
             if (city) params.append('city', city);
             if (genre) params.append('genre', genre);
 
-            document.getElementById('agendaFrame').src = url + params.toString();
+            const finalUrl = url + params.toString();
+            document.getElementById('agendaFrame').src = finalUrl;
+            
+            // Actualizar información de depuración
+            document.getElementById('debugContent').innerHTML = `
+                <p>URL actual: ${finalUrl}</p>
+                <p>Parámetros:</p>
+                <ul>
+                    <li>Tema: ${theme}</li>
+                    <li>Límite: ${limit}</li>
+                    <li>Ciudad: ${city || 'ninguna'}</li>
+                    <li>Género: ${genre || 'ninguno'}</li>
+                </ul>
+            `;
         }
+
+        // Inicializar información de depuración
+        updateIframe();
+
+        // Manejar errores del iframe
+        window.addEventListener('message', function(event) {
+            if (event.origin === 'https://agenda-recitales-production.up.railway.app') {
+                console.log('Mensaje recibido del iframe:', event.data);
+            }
+        });
+
+        // Manejar errores de carga del iframe
+        document.getElementById('agendaFrame').onerror = function() {
+            console.error('Error al cargar el iframe');
+            document.getElementById('debugContent').innerHTML += '<p style="color: red;">Error al cargar el iframe</p>';
+        };
     </script>
 </body>
 </html> 

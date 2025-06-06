@@ -20,7 +20,6 @@ const EventList = () => {
 
   const handleFilterChange = (filters: any) => {
     setFilters(filters);
-    fetchEvents();
   };
 
   return (

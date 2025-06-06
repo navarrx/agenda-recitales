@@ -99,6 +99,8 @@ export const useEventStore = create<EventState>((set, get) => ({
       filters: { ...state.filters, ...newFilters },
       pagination: DEFAULT_PAGINATION, // Reset pagination when filters change
     }));
+    // Fetch events with new filters
+    get().fetchEvents();
   },
 
   resetFilters: () => {
