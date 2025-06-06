@@ -30,12 +30,6 @@ interface EmbeddedAgendaProps {
   width?: string;
 }
 
-interface ApiResponse {
-  items: Event[];
-  total: number;
-  hasMore: boolean;
-}
-
 const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   initialGenre,
   initialCity,
