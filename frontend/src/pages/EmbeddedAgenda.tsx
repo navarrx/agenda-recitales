@@ -62,10 +62,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         setLoading(true);
         const params = new URLSearchParams({
           skip: '0',
-          limit: ITEMS_PER_PAGE.toString(),
-          ...(selectedGenre && { genre: selectedGenre }),
-          ...(selectedCity && { city: selectedCity }),
-          ...(selectedDate && { date: selectedDate.toISOString().split('T')[0] })
+          limit: ITEMS_PER_PAGE.toString()
         });
 
         const response = await fetch(`${import.meta.env.VITE_API_URL}/events?${params}`);
@@ -93,7 +90,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     };
 
     fetchEvents();
-  }, [selectedGenre, selectedCity, selectedDate]);
+  }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -255,21 +252,21 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             width: 100%;
             padding: 0.75rem 1rem 0.75rem 2.5rem;
             border-radius: 9999px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: transparent;
-            color: #ffffff;
+            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+            background: ${themeParam === 'dark' ? 'transparent' : 'rgba(0, 0, 0, 0.05)'};
+            color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
             font-size: 0.875rem;
-            transition: all 0.3s ease;
-          }
-
-          .search-bar::placeholder {
-            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.2s ease;
           }
 
           .search-bar:focus {
             outline: none;
-            border-color: #ffffff;
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+            border-color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'};
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
+          }
+
+          .search-bar::placeholder {
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'};
           }
 
           .search-icon {
