@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Layout from '../../components/layout/Layout';
 import { useEventStore } from '../../store/eventStore';
@@ -15,6 +15,10 @@ const EventDetailPage = () => {
       fetchEvent(parseInt(id, 10));
     }
   }, [id, fetchEvent]);
+
+  const isEventPast = (date: string) => {
+    return isPast(new Date(date));
+  };
 
   if (loading) {
     return (
@@ -158,20 +162,31 @@ const EventDetailPage = () => {
             {/* Ticket button */}
             {event.ticket_url && (
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-                <a
-                  href={event.ticket_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full px-6 py-4 bg-secondary-600 text-white text-center rounded-lg hover:bg-secondary-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-1"
-                >
-                  <span className="flex items-center justify-center text-lg font-semibold">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17A3 3 0 015 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clipRule="evenodd" />
-                      <path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z" />
-                    </svg>
-                    Comprar entradas
-                  </span>
-                </a>
+                {isEventPast(event.date) ? (
+                  <div className="block w-full px-6 py-4 bg-gray-500 text-white text-center rounded-lg shadow-md">
+                    <span className="flex items-center justify-center text-lg font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      Evento finalizado
+                    </span>
+                  </div>
+                ) : (
+                  <a
+                    href={event.ticket_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full px-6 py-4 bg-secondary-600 text-white text-center rounded-lg hover:bg-secondary-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-1"
+                  >
+                    <span className="flex items-center justify-center text-lg font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17A3 3 0 015 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clipRule="evenodd" />
+                        <path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z" />
+                      </svg>
+                      Comprar entradas
+                    </span>
+                  </a>
+                )}
               </div>
             )}
 
