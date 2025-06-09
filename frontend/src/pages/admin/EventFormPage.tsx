@@ -17,8 +17,8 @@ const emptyEvent: Omit<Event, 'id' | 'created_at' | 'updated_at'> = {
   image_url: '',
   ticket_url: '',
   is_featured: false,
-  latitude: null,
-  longitude: null
+  latitude: undefined,
+  longitude: undefined
 };
 
 const EventFormPage = () => {
@@ -67,6 +67,9 @@ const EventFormPage = () => {
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
+    } else if (name === 'latitude' || name === 'longitude') {
+      const numValue = value === '' ? undefined : parseFloat(value);
+      setFormData(prev => ({ ...prev, [name]: numValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
