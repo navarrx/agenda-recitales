@@ -28,7 +28,7 @@ const EventList = () => {
       
       {events.length > 0 ? (
         <>
-          <div className="text-gray-700 dark:text-gray-300 mb-4">
+          <div className="text-white/80 mb-4">
             Mostrando {events.length} de {totalEvents} eventos
           </div>
           
@@ -43,7 +43,7 @@ const EventList = () => {
               <button
                 onClick={loadMoreEvents}
                 disabled={loading}
-                className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-400 transition-colors"
+                className="px-6 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 disabled:bg-white/20 transition-colors"
               >
                 {loading ? 'Cargando...' : 'Cargar más eventos'}
               </button>
@@ -52,13 +52,13 @@ const EventList = () => {
         </>
       ) : loading ? (
         <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a48c4]"></div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
+        <div className="bg-[#101119] rounded-lg shadow-md p-8 text-center border border-white/10">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16 mx-auto text-gray-400 mb-4"
+            className="h-16 w-16 mx-auto text-white/40 mb-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -70,10 +70,10 @@ const EventList = () => {
               d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-medium text-white mb-2">
             No se encontraron eventos
           </h3>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-white/80">
             Intenta cambiar los filtros o vuelve más tarde.
           </p>
         </div>

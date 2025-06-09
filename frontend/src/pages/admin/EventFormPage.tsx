@@ -158,7 +158,7 @@ const EventFormPage = () => {
       <div className="mb-6">
         <Link
           to="/admin"
-          className="text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 flex items-center"
+          className="text-[#1a48c4] hover:text-[#1a48c4]/80 flex items-center transition-colors duration-200"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -167,13 +167,13 @@ const EventFormPage = () => {
         </Link>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+      <div className="bg-[#101119] rounded-lg shadow-md p-6 border border-white/10">
+        <h1 className="text-2xl font-bold text-white mb-6">
           {isEditMode ? 'Editar Evento' : 'Crear Nuevo Evento'}
         </h1>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-400/10 border border-red-400 text-red-400 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
@@ -181,7 +181,7 @@ const EventFormPage = () => {
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-white/80 mb-1">
                 Nombre del evento *
               </label>
               <input
@@ -190,12 +190,12 @@ const EventFormPage = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-white/80 mb-1">
                 Artista *
               </label>
               <input
@@ -204,12 +204,12 @@ const EventFormPage = () => {
                 value={formData.artist}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-white/80 mb-1">
                 Género musical *
               </label>
               <input
@@ -218,12 +218,12 @@ const EventFormPage = () => {
                 value={formData.genre}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-white/80 mb-1">
                 Fecha y hora *
               </label>
               <input
@@ -232,12 +232,12 @@ const EventFormPage = () => {
                 value={formData.date}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-white/80 mb-1">
                 Ciudad *
               </label>
               <input
@@ -246,13 +246,13 @@ const EventFormPage = () => {
                 value={formData.city}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Venue/Local *
+              <label className="block text-sm font-medium text-white/80 mb-1">
+                Lugar *
               </label>
               <input
                 type="text"
@@ -260,13 +260,13 @@ const EventFormPage = () => {
                 value={formData.venue}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Ubicación *
+              <label className="block text-sm font-medium text-white/80 mb-1">
+                Dirección *
               </label>
               <input
                 type="text"
@@ -274,155 +274,94 @@ const EventFormPage = () => {
                 value={formData.location}
                 onChange={handleChange}
                 required
-                placeholder="Dirección completa"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
 
-            <div className="md:col-span-2">
-              <button
-                type="button"
-                onClick={fetchCoordinates}
-                disabled={geocodingStatus === 'loading' || !formData.location || !formData.city}
-                className="w-full px-4 py-2 mb-2 bg-secondary-600 text-white rounded-md hover:bg-secondary-700 disabled:bg-gray-400 transition-colors flex items-center justify-center"
-              >
-                {geocodingStatus === 'loading' ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Obteniendo coordenadas...
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Obtener coordenadas de la dirección
-                  </>
-                )}
-              </button>
-              {geocodingStatus === 'success' && (
-                <div className="mb-2 text-sm text-green-500 dark:text-green-400">
-                  ✓ Coordenadas obtenidas correctamente
-                </div>
-              )}
-              {geocodingStatus === 'error' && (
-                <div className="mb-2 text-sm text-red-500 dark:text-red-400">
-                  ✗ Error al obtener coordenadas
-                </div>
-              )}
-            </div>
-
-            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Latitud
-                </label>
-                <input
-                  type="number"
-                  name="latitude"
-                  value={formData.latitude || ''}
-                  onChange={handleChange}
-                  step="any"
-                  placeholder="-34.6037"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Coordenada de latitud (ej. -34.6037 para Buenos Aires)
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Longitud
-                </label>
-                <input
-                  type="number"
-                  name="longitude"
-                  value={formData.longitude || ''}
-                  onChange={handleChange}
-                  step="any"
-                  placeholder="-58.3816"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Coordenada de longitud (ej. -58.3816 para Buenos Aires)
-                </p>
-              </div>
-            </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-white/80 mb-1">
                 URL de la imagen
               </label>
               <input
                 type="url"
                 name="image_url"
-                value={formData.image_url || ''}
+                value={formData.image_url}
                 onChange={handleChange}
-                placeholder="https://ejemplo.com/imagen.jpg"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                URL para compra de entradas
+              <label className="block text-sm font-medium text-white/80 mb-1">
+                URL de tickets
               </label>
               <input
                 type="url"
                 name="ticket_url"
-                value={formData.ticket_url || ''}
+                value={formData.ticket_url}
                 onChange={handleChange}
-                placeholder="https://entradas.com/evento"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="is_featured"
-                checked={formData.is_featured}
-                onChange={handleChange}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded dark:border-gray-700"
-              />
-              <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                Destacar en la página principal
-              </label>
             </div>
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Descripción *
+            <label className="block text-sm font-medium text-white/80 mb-1">
+              Descripción
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
               rows={4}
-              required
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="mb-6">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="is_featured"
+                checked={formData.is_featured}
+                onChange={handleChange}
+                className="h-4 w-4 text-[#1a48c4] focus:ring-[#1a48c4] border-white/20 rounded"
+              />
+              <label className="ml-2 block text-sm text-white/80">
+                Destacar evento
+              </label>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex items-center space-x-4">
+              <button
+                type="button"
+                onClick={fetchCoordinates}
+                disabled={geocodingStatus === 'loading'}
+                className="px-4 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {geocodingStatus === 'loading' ? 'Obteniendo...' : 'Obtener coordenadas'}
+              </button>
+              {geocodingStatus === 'success' && (
+                <span className="text-green-400">Coordenadas obtenidas</span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4">
             <Link
               to="/admin"
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors mr-2"
+              className="px-4 py-2 border border-white/20 text-white rounded-md hover:bg-white/5 transition-all duration-300"
             >
               Cancelar
             </Link>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-400 transition-colors"
+              className="px-4 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Guardando...' : isEditMode ? 'Actualizar Evento' : 'Crear Evento'}
+              {submitting ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </form>

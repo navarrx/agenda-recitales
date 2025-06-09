@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from . import models
 from .database import engine
-from .routers import events
+from .routers import events, auth
 import os
 import logging
 from dotenv import load_dotenv
@@ -81,8 +81,9 @@ async def check_cors_headers(request: Request, call_next):
     
     return response
 
-# Include routers - Asegúrate de que esto se hace correctamente
+# Include routers
 app.include_router(events.router)
+app.include_router(auth.router)
 
 # Añadir un endpoint explícito para /events para asegurar que funciona
 @app.get("/events")

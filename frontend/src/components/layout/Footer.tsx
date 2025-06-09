@@ -4,17 +4,17 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-white dark:bg-neutral-800 shadow-soft-up py-10 mt-12 transition-colors duration-300">
+    <footer className="bg-[#101119] shadow-soft-up py-10 mt-12 transition-colors duration-300">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="slide-up">
             <div className="flex items-center mb-4">
-              <span className="text-2xl font-bold">
-                <span className="text-primary-600 dark:text-primary-400">Agenda</span>
-                <span className="text-secondary-600 dark:text-secondary-400">Recitales</span>
+              <span className="text-2xl font-bold text-white">
+                <span className="text-white">Billboard </span>
+                <span className="text-white">Agenda</span>
               </span>
             </div>
-            <p className="text-neutral-600 dark:text-neutral-400 max-w-md leading-relaxed">
+            <p className="text-white/80 max-w-md leading-relaxed">
               Tu agenda de eventos musicales favorita. Encuentra los mejores recitales en tu ciudad 
               y disfruta de la música en vivo.
             </p>
@@ -26,25 +26,24 @@ const Footer = () => {
           </div>
           
           <div className="slide-up" style={{ animationDelay: '100ms' }}>
-            <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
               Enlaces Rápidos
             </h3>
             <ul className="space-y-3">
               <FooterLink to="/">Inicio</FooterLink>
               <FooterLink to="/events">Eventos</FooterLink>
-              <FooterLink to="/?admin=true">Administración</FooterLink>
             </ul>
           </div>
           
           <div className="slide-up" style={{ animationDelay: '200ms' }}>
-            <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
               Contacto
             </h3>
-            <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+            <p className="text-white/80 mb-4">
               ¿Tienes alguna pregunta o sugerencia? No dudes en contactarnos.
             </p>
-            <p className="flex items-center text-neutral-600 dark:text-neutral-400 mb-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <p className="flex items-center text-white/80 mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               contacto@agendarecitales.com
@@ -52,14 +51,14 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-neutral-200 dark:border-neutral-700 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-neutral-600 dark:text-neutral-400 text-sm text-center sm:text-left">
-            &copy; {currentYear} AgendaRecitales. Todos los derechos reservados.
+        <div className="border-t border-white/10 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center">
+          <p className="text-white/60 text-sm text-center sm:text-left">
+            &copy; {currentYear} Billboard. Todos los derechos reservados.
           </p>
           <div className="mt-4 sm:mt-0">
             <ul className="flex flex-wrap space-x-5 justify-center">
-              <li><a href="#" className="text-neutral-500 hover:text-primary-600 dark:text-neutral-400 dark:hover:text-primary-400 text-sm transition-colors">Privacidad</a></li>
-              <li><a href="#" className="text-neutral-500 hover:text-primary-600 dark:text-neutral-400 dark:hover:text-primary-400 text-sm transition-colors">Términos</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#1a48c4] text-sm transition-colors">Privacidad</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#1a48c4] text-sm transition-colors">Términos</a></li>
             </ul>
           </div>
         </div>
@@ -72,7 +71,7 @@ const FooterLink = ({ to, children }: { to: string; children: React.ReactNode })
   <li>
     <Link 
       to={to} 
-      className="text-neutral-600 hover:text-primary-600 dark:text-neutral-400 dark:hover:text-primary-400 transition-colors duration-200 hover:translate-x-1 inline-block"
+      className="text-white/80 hover:text-[#1a48c4] transition-colors duration-200 hover:translate-x-1 inline-block"
     >
       {children}
     </Link>
@@ -106,7 +105,7 @@ const SocialIcon = ({ type }: { type: 'twitter' | 'instagram' | 'facebook' }) =>
   return (
     <a 
       href="#" 
-      className="text-neutral-600 hover:text-primary-600 dark:text-neutral-400 dark:hover:text-primary-400 transition-colors duration-200 hover-scale"
+      className="text-white/80 hover:text-[#1a48c4] transition-colors duration-200 hover-scale"
       aria-label={`Síguenos en ${type}`}
     >
       {getIcon()}

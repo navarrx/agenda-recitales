@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { es } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 
 interface Event {
   id: number;
@@ -22,36 +24,36 @@ interface Event {
 }
 
 interface EmbeddedAgendaProps {
-  initialGenre?: string;
-  initialCity?: string;
-  initialLimit?: number;
   theme?: 'light' | 'dark';
-  height?: string;
   width?: string;
+  initialFilters?: {
+    genre?: string;
+    location?: string;
+    date?: string;
+  };
 }
 
 const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
-  initialGenre,
-  initialCity,
-  initialLimit = 12,
-  theme = 'light',
-  height = '600px',
-  width = '100%'
+  theme = 'dark',
+  width = '100%',
+  initialFilters = {}
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState(initialGenre || '');
-  const [selectedCity, setSelectedCity] = useState(initialCity || '');
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState(initialFilters.genre || '');
+  const [selectedCity, setSelectedCity] = useState(initialFilters.location || '');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(initialFilters.date ? new Date(initialFilters.date) : null);
   const [allGenres, setAllGenres] = useState<string[]>([]);
   const [allCities, setAllCities] = useState<string[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [displayLimit, setDisplayLimit] = useState(initialLimit);
+  const [displayLimit, setDisplayLimit] = useState(12);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const ITEMS_PER_PAGE = 12;
 
   const themeParam = searchParams.get('theme') || theme;
@@ -226,17 +228,26 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, displayLimit);
 
+  const handleEventClick = (event: Event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+  };
+
   return (
     <>
       <style>
         {`
           .agenda-container {
-            height: ${height};
             width: ${width};
             overflow: auto;
             padding: 1.5rem;
-            background: ${themeParam === 'dark' ? '#000000' : '#ffffff'};
-            color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
+            background: ${themeParam === 'dark' ? '#101119' : '#ffffff'};
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           }
 
@@ -250,21 +261,21 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             width: 100%;
             padding: 0.75rem 1rem 0.75rem 2.5rem;
             border-radius: 9999px;
-            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
-            background: ${themeParam === 'dark' ? 'transparent' : '#ffffff'};
-            color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
+            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'};
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#ffffff'};
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             font-size: 0.875rem;
             transition: all 0.3s ease;
           }
 
           .search-bar::placeholder {
-            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'};
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(16, 17, 25, 0.5)'};
           }
 
           .search-bar:focus {
             outline: none;
-            border-color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
-            box-shadow: 0 0 0 3px ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
+            border-color: #1a48c4;
+            box-shadow: 0 0 0 3px ${themeParam === 'dark' ? 'rgba(26, 72, 196, 0.2)' : 'rgba(26, 72, 196, 0.1)'};
           }
 
           .search-icon {
@@ -274,13 +285,13 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             transform: translateY(-50%);
             width: 1.25rem;
             height: 1.25rem;
-            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'};
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(16, 17, 25, 0.5)'};
             pointer-events: none;
             transition: color 0.3s ease;
           }
 
           .search-bar:focus + .search-icon {
-            color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
+            color: #1a48c4;
           }
 
           .filters-container {
@@ -289,15 +300,15 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             flex-wrap: wrap;
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'};
+            border-bottom: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'};
           }
 
           .filter-select {
             padding: 0.5rem 1rem;
             border-radius: 9999px;
-            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'};
-            background: #ffffff;
-            color: #000000;
+            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'};
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#ffffff'};
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             font-size: 0.875rem;
             min-width: 150px;
             cursor: pointer;
@@ -310,25 +321,25 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           }
 
           .filter-select option {
-            background: #ffffff;
-            color: #000000;
+            background: ${themeParam === 'dark' ? '#101119' : '#ffffff'};
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             padding: 0.5rem;
           }
 
           .filter-select:hover {
             border-color: #1a48c4;
             transform: translateY(-2px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
           }
 
           .filter-select:focus {
             outline: none;
             border-color: #1a48c4;
-            box-shadow: 0 0 0 3px rgba(26, 72, 196, 0.1);
+            box-shadow: 0 0 0 3px rgba(26, 72, 196, 0.2);
           }
 
           .clear-filters {
-            color: #ffffff;
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             background: none;
             border: none;
             font-size: 0.875rem;
@@ -337,10 +348,12 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             font-weight: 700;
             margin-left: auto;
             transition: all 0.3s ease;
+            opacity: 0.7;
           }
 
           .clear-filters:hover {
-            opacity: 0.7;
+            opacity: 1;
+            color: #1a48c4;
             transform: translateX(4px);
           }
 
@@ -361,12 +374,12 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           }
 
           .table-header {
-            border-bottom: 2px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'};
+            border-bottom: 2px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'};
             padding: 1rem;
             text-align: left;
             font-size: 0.875rem;
             font-weight: 600;
-            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : '#4b5563'};
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'};
             white-space: nowrap;
           }
 
@@ -377,7 +390,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           .table-header:nth-child(5) { width: 10%; }
 
           .table-row {
-            border-bottom: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'};
+            border-bottom: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'};
             transition: all 0.3s ease;
             cursor: pointer;
             opacity: 1;
@@ -395,7 +408,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           }
 
           .table-row:hover {
-            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f8fafc'};
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(16, 17, 25, 0.02)'};
             transform: translateX(8px);
             box-shadow: ${themeParam === 'dark' 
               ? '0 4px 6px rgba(0, 0, 0, 0.2)'
@@ -418,7 +431,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
           .artist-cell {
             font-weight: 700;
-            color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             font-size: 1rem;
             letter-spacing: -0.01em;
             transition: color 0.3s ease;
@@ -427,19 +440,19 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
           .date-cell {
             white-space: nowrap;
-            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : '#4b5563'};
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'};
             font-weight: 500;
             min-width: 0;
           }
 
           .location-cell {
-            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : '#4b5563'};
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'};
             font-weight: 500;
             min-width: 0;
           }
 
           .venue-cell {
-            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : '#4b5563'};
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'};
             font-weight: 500;
             min-width: 0;
           }
@@ -468,9 +481,9 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           .date-picker-button {
             padding: 0.5rem 1rem;
             border-radius: 9999px;
-            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'};
-            background: #ffffff;
-            color: #000000;
+            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'};
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#ffffff'};
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             font-size: 0.875rem;
             min-width: 150px;
             cursor: pointer;
@@ -485,39 +498,39 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           .date-picker-button:hover {
             border-color: #1a48c4;
             transform: translateY(-2px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
           }
 
           .react-datepicker {
-            background: #ffffff !important;
-            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'} !important;
-            border-radius: 4px !important;
+            background: ${themeParam === 'dark' ? '#101119' : '#ffffff'} !important;
+            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'} !important;
+            border-radius: 8px !important;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             transition: all 0.3s ease !important;
           }
 
           .react-datepicker__header {
-            background: #ffffff !important;
-            border-bottom: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'} !important;
+            background: ${themeParam === 'dark' ? '#101119' : '#ffffff'} !important;
+            border-bottom: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'} !important;
             transition: all 0.3s ease !important;
           }
 
           .react-datepicker__current-month {
-            color: #000000 !important;
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'} !important;
             font-weight: 600 !important;
           }
 
           .react-datepicker__day-name {
-            color: #000000 !important;
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'} !important;
           }
 
           .react-datepicker__day {
-            color: #000000 !important;
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'} !important;
             transition: all 0.3s ease !important;
           }
 
           .react-datepicker__day:hover {
-            background: #f3f4f6 !important;
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'} !important;
             transform: scale(1.1) !important;
           }
 
@@ -538,14 +551,14 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             justify-content: center;
             margin-top: 2rem;
             padding-top: 1rem;
-            border-top: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'};
+            border-top: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'};
           }
 
           .load-more-button {
             padding: 0.75rem 2rem;
             background: transparent;
-            color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
-            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
+            border: 1px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(16, 17, 25, 0.2)'};
             border-radius: 9999px;
             font-size: 0.875rem;
             font-weight: 600;
@@ -563,8 +576,9 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           }
 
           .load-more-button:not(:disabled):hover {
-            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
-            border-color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'};
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.05)'};
+            border-color: #1a48c4;
+            color: #1a48c4;
             transform: translateY(-2px);
           }
 
@@ -585,8 +599,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           .loading-spinner {
             width: 1.25rem;
             height: 1.25rem;
-            border: 2px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'};
-            border-top-color: ${themeParam === 'dark' ? '#ffffff' : '#000000'};
+            border: 2px solid ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(16, 17, 25, 0.3)'};
+            border-top-color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             border-radius: 50%;
             animation: spin 1s linear infinite;
           }
@@ -595,6 +609,177 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             to {
               transform: rotate(360deg);
             }
+          }
+
+          .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'};
+            font-size: 0.875rem;
+          }
+
+          .error {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: #ef4444;
+            font-size: 0.875rem;
+          }
+
+          .no-events {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'};
+            font-size: 0.875rem;
+            text-align: center;
+          }
+
+          .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 1rem;
+          }
+
+          .modal-content {
+            background: ${themeParam === 'dark' ? '#101119' : '#ffffff'};
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+
+          .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 9999px;
+            transition: all 0.3s ease;
+            z-index: 10;
+          }
+
+          .modal-close:hover {
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(16, 17, 25, 0.1)'};
+            transform: rotate(90deg);
+          }
+
+          .event-hero {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            border-radius: 1rem 1rem 0 0;
+            overflow: hidden;
+          }
+
+          .event-hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .event-hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(16, 17, 25, 0.4), rgba(16, 17, 25, 0.8));
+          }
+
+          .event-content {
+            padding: 2rem;
+          }
+
+          .event-header {
+            margin-bottom: 2rem;
+          }
+
+          .event-genre {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #1a48c4;
+            color: #ffffff;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+          }
+
+          .event-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
+            margin-bottom: 0.5rem;
+          }
+
+          .event-artist {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(16, 17, 25, 0.9)'};
+            margin-bottom: 1.5rem;
+          }
+
+          .event-details {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+          }
+
+          .event-info {
+            background: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(16, 17, 25, 0.02)'};
+            padding: 1.5rem;
+            border-radius: 1rem;
+          }
+
+          .event-info h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
+            margin-bottom: 1rem;
+          }
+
+          .event-info p {
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'};
+            line-height: 1.6;
+          }
+
+          .event-location {
+            margin-top: 1rem;
+          }
+
+          .event-location h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
+            margin-bottom: 0.5rem;
+          }
+
+          .event-location p {
+            color: ${themeParam === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 17, 25, 0.7)'};
+          }
+
+          .event-map {
+            display: none;
           }
         `}
       </style>
@@ -691,9 +876,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                 <tr>
                   <th className="table-header">Artista</th>
                   <th className="table-header">Fecha</th>
-                  <th className="table-header">Ubicación</th>
                   <th className="table-header">Lugar</th>
-                  <th className="table-header"></th>
+                  <th className="table-header">Sala</th>
                 </tr>
               </thead>
               <tbody>
@@ -701,35 +885,19 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                   <tr 
                     key={event.id} 
                     className={`table-row ${isAnimating ? 'fade-out' : 'fade-in'}`}
+                    onClick={() => handleEventClick(event)}
                   >
                     <td className="table-cell artist-cell">
                       {event.artist}
                     </td>
                     <td className="table-cell date-cell">
-                      {new Date(event.date).toLocaleDateString('es-ES', {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
+                      {format(new Date(event.date), "EEEE d 'de' MMMM", { locale: es })}
                     </td>
                     <td className="table-cell location-cell">
-                      {event.city}
+                      {event.location}
                     </td>
                     <td className="table-cell venue-cell">
                       {event.venue}
-                    </td>
-                    <td className="table-cell">
-                      {event.ticket_url && (
-                        <a
-                          href={event.ticket_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ticket-button"
-                        >
-                          Comprar
-                        </a>
-                      )}
                     </td>
                   </tr>
                 ))}
@@ -770,6 +938,67 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
               </div>
             )}
           </>
+      )}
+
+      {isModalOpen && selectedEvent && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={closeModal}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+
+            <div className="event-hero">
+              {selectedEvent.image_url ? (
+                <img src={selectedEvent.image_url} alt={selectedEvent.name} />
+              ) : (
+                <div style={{ 
+                  background: '#1a48c4', 
+                  width: '100%', 
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  fontSize: '2rem',
+                  fontWeight: 'bold'
+                }}>
+                  {selectedEvent.artist}
+                </div>
+              )}
+              <div className="event-hero-overlay" />
+            </div>
+
+            <div className="event-content">
+              <div className="event-header">
+                <span className="event-genre">{selectedEvent.genre}</span>
+                <h1 className="event-title">{selectedEvent.name}</h1>
+                <h2 className="event-artist">{selectedEvent.artist}</h2>
+              </div>
+
+              <div className="event-details">
+                <div className="event-info">
+                  <h3>Descripción</h3>
+                  <p>{selectedEvent.description}</p>
+                </div>
+
+                <div className="event-info">
+                  <h3>Información del Evento</h3>
+                  <p>
+                    <strong>Fecha:</strong> {format(new Date(selectedEvent.date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}
+                  </p>
+                  <div className="event-location">
+                    <h4>Ubicación</h4>
+                    <p>{selectedEvent.venue}</p>
+                    <p>{selectedEvent.location}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
     </>

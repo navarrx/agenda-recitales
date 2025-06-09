@@ -38,25 +38,29 @@ const HomePage = () => {
     <Layout>
       {/* Hero Section with enhanced animation */}
       <section 
-        className={`relative bg-gradient-to-r from-primary-600 to-secondary-600 rounded-2xl overflow-hidden mb-16 transition-all duration-700 ease-out ${
+        className={`relative bg-[#101119] rounded-2xl overflow-hidden mb-16 transition-all duration-700 ease-out ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
         {/* Background animated pattern */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-repeat opacity-10" style={{ 
+          <div className="absolute inset-0 bg-repeat opacity-5" style={{ 
             backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
             animation: "moveBackground 30s linear infinite"
           }}></div>
         </div>
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/50"></div>
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a48c4]/20 via-transparent to-[#1a48c4]/10"></div>
+        
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#1a48c4]/10 rounded-full filter blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#1a48c4]/10 rounded-full filter blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
         
         {/* Content */}
-        <div className="relative z-10 px-8 py-16 md:py-32 md:px-16 text-white">
+        <div className="relative z-10 px-8 py-16 md:py-32 md:px-16">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-white">
               Descubre los mejores eventos musicales
             </h1>
             <p className="text-lg md:text-xl mb-10 max-w-2xl leading-relaxed text-white/90">
@@ -66,7 +70,7 @@ const HomePage = () => {
             <div className="flex flex-wrap gap-4">
               <Link 
                 to="/events" 
-                className="btn btn-primary bg-white text-primary-600 hover:bg-white/90 hover:text-primary-700 group"
+                className="btn bg-[#1a48c4] text-white hover:bg-[#1a48c4]/90 group px-6 py-3 rounded-lg inline-flex items-center transition-all duration-300"
               >
                 Ver todos los eventos
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -76,9 +80,6 @@ const HomePage = () => {
             </div>
           </div>
         </div>
-
-        {/* Decorative elements */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-neutral-50 dark:from-neutral-900 to-transparent"></div>
       </section>
 
       {/* Featured Events Section with staggered animation */}
@@ -88,13 +89,13 @@ const HomePage = () => {
         }`}
       >
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white flex items-center">
-            <span className="inline-block h-6 w-1.5 bg-primary-600 rounded-full mr-4"></span>
+          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center">
+            <span className="inline-block h-6 w-1.5 bg-[#1a48c4] rounded-full mr-4"></span>
             Eventos destacados
           </h2>
           <Link 
             to="/events" 
-            className="link inline-flex items-center group"
+            className="text-white hover:text-[#1a48c4] inline-flex items-center group"
           >
             <span>Ver todos</span>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -147,13 +148,13 @@ const HomePage = () => {
         }`}
       >
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white flex items-center">
-            <span className="inline-block h-6 w-1.5 bg-secondary-600 rounded-full mr-4"></span>
+          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center">
+            <span className="inline-block h-6 w-1.5 bg-[#1a48c4] rounded-full mr-4"></span>
             Próximos eventos
           </h2>
           <Link 
             to="/events" 
-            className="link inline-flex items-center group"
+            className="text-white hover:text-[#1a48c4] inline-flex items-center group"
           >
             <span>Ver todos</span>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -201,30 +202,30 @@ const HomePage = () => {
 
       {/* Newsletter Section */}
       <section 
-        className={`mt-20 py-12 px-8 bg-gradient-to-r from-accent-500/10 to-primary-500/10 rounded-xl relative overflow-hidden transition-all duration-700 ease-out delay-300 ${
+        className={`mt-20 py-12 px-8 bg-[#101119] rounded-xl relative overflow-hidden transition-all duration-700 ease-out delay-300 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-accent-400/20 rounded-full filter blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-400/20 rounded-full filter blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#1a48c4]/20 rounded-full filter blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#1a48c4]/20 rounded-full filter blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
         
         <div className="relative max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
             No te pierdas ningún evento
           </h2>
-          <p className="text-lg text-neutral-700 dark:text-neutral-300 mb-8">
+          <p className="text-lg text-white/90 mb-8">
             Suscríbete a nuestra newsletter y recibe notificaciones sobre los próximos eventos en tu ciudad.
           </p>
           <form className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
             <input 
               type="email" 
               placeholder="Tu correo electrónico" 
-              className="input flex-grow" 
+              className="input flex-grow bg-white/10 text-white placeholder-white/50 border-white/20" 
               required
             />
             <button 
               type="submit" 
-              className="btn btn-primary"
+              className="btn bg-[#1a48c4] text-white hover:bg-[#1a48c4]/90"
             >
               Suscribirse
             </button>

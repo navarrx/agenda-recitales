@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 import logging
-from .. import crud, schemas, models, database
+from .. import crud, schemas, models, database, auth
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -97,17 +97,26 @@ def read_event(event_id: int, db: Session = Depends(database.get_db)):
     return db_event
 
 @router.post("/", response_model=schemas.Event)
-def create_event(event: schemas.EventCreate, db: Session = Depends(database.get_db)):
+def create_event(
+    event: schemas.EventCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_admin_user)
+):
     """
-    Create a new event
+    Create a new event (admin only)
     """
     logger.info(f"POST /events request received")
     return crud.create_event(db=db, event=event)
 
 @router.put("/{event_id}", response_model=schemas.Event)
-def update_event(event_id: int, event: schemas.EventUpdate, db: Session = Depends(database.get_db)):
+def update_event(
+    event_id: int,
+    event: schemas.EventUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_admin_user)
+):
     """
-    Update an existing event
+    Update an existing event (admin only)
     """
     logger.info(f"PUT /events/{event_id} request received")
     
@@ -117,9 +126,13 @@ def update_event(event_id: int, event: schemas.EventUpdate, db: Session = Depend
     return db_event
 
 @router.delete("/{event_id}")
-def delete_event(event_id: int, db: Session = Depends(database.get_db)):
+def delete_event(
+    event_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_admin_user)
+):
     """
-    Delete an event
+    Delete an event (admin only)
     """
     logger.info(f"DELETE /events/{event_id} request received")
     
