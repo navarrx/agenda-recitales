@@ -246,8 +246,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const handleViewMore = (eventId: number) => {
     // URL de producción
     const baseUrl = 'https://agenda-recitales-production.up.railway.app';
-    // Redirigir a la página de detalle del evento
-    window.location.href = `${baseUrl}/events/${eventId}`;
+    // Abrir en una nueva pestaña
+    window.open(`${baseUrl}/events/${eventId}`, '_blank');
   };
 
   return (

@@ -155,7 +155,7 @@ const EventMap = ({ address, venueName, city, latitude, longitude, className = '
     <div className={`rounded-lg overflow-hidden ${className}`}>
       <div 
         ref={setMapElement}
-        style={{ height: '400px', width: '100%' }}
+        style={{ height: '400px', width: '100%', position: 'relative', zIndex: 0 }}
         className="leaflet-container"
       />
     </div>
