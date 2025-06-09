@@ -15,11 +15,11 @@ interface Event {
   city: string;
   venue: string;
   description: string;
-  image_url?: string;
-  ticket_url?: string;
+  image_url: string | null;
+  ticket_url: string | null;
   is_featured: boolean;
-  latitude?: number;
-  longitude?: number;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface EmbeddedAgendaProps {
@@ -53,6 +53,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const ITEMS_PER_PAGE = 12;
 
   const themeParam = searchParams.get('theme') || theme;
@@ -230,11 +231,23 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const handleEventClick = (event: Event) => {
     setSelectedEvent(event);
     setIsModalOpen(true);
+    setIsClosing(false);
   };
 
   const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedEvent(null);
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setSelectedEvent(null);
+      setIsClosing(false);
+    }, 300);
+  };
+
+  const handleViewMore = (eventId: number) => {
+    // URL de producción
+    const baseUrl = 'https://agenda-recitales-production.up.railway.app';
+    // Redirigir a la página de detalle del evento
+    window.location.href = `${baseUrl}/events/${eventId}`;
   };
 
   return (
@@ -940,58 +953,90 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
       )}
 
       {isModalOpen && selectedEvent && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeModal}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+        <div 
+          className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-all duration-300 ${
+            isClosing ? 'opacity-0' : 'opacity-100'
+          }`}
+          onClick={closeModal}
+        >
+          <div 
+            className={`bg-[#101119] rounded-xl shadow-xl w-full max-w-lg transform transition-all duration-300 ${
+              isClosing 
+                ? 'opacity-0 scale-95 translate-y-4' 
+                : 'opacity-100 scale-100 translate-y-0'
+            }`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="relative">
+              <button 
+                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10 hover:scale-110 transform duration-200"
+                onClick={closeModal}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
 
-            <div className="event-hero">
-              {selectedEvent.image_url ? (
-                <img src={selectedEvent.image_url} alt={selectedEvent.name} />
-              ) : (
-                <div style={{ 
-                  background: '#1a48c4', 
-                  width: '100%', 
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                  fontSize: '2rem',
-                  fontWeight: 'bold'
-                }}>
-                  {selectedEvent.artist}
-                </div>
-              )}
-              <div className="event-hero-overlay" />
-            </div>
-
-            <div className="event-content">
-              <div className="event-header">
-                <span className="event-genre">{selectedEvent.genre}</span>
-                <h1 className="event-title">{selectedEvent.name}</h1>
-                <h2 className="event-artist">{selectedEvent.artist}</h2>
+              <div className="relative h-48 overflow-hidden rounded-t-xl">
+                {selectedEvent.image_url ? (
+                  <img 
+                    src={selectedEvent.image_url} 
+                    alt={selectedEvent.name} 
+                    className="w-full h-full object-cover transform transition-transform duration-700 hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-[#1a48c4]">
+                    <span className="text-white text-2xl font-bold">{selectedEvent.artist}</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#101119] via-transparent to-transparent"></div>
               </div>
 
-              <div className="event-details">
-                <div className="event-info">
-                  <h3>Descripción</h3>
-                  <p>{selectedEvent.description}</p>
+              <div className="p-6">
+                <div className="mb-4">
+                  <span className="inline-block bg-[#1a48c4] text-white text-sm font-semibold px-3 py-1 rounded-full mb-2 transform transition-transform duration-200 hover:scale-105">
+                    {selectedEvent.genre}
+                  </span>
+                  <h2 className="text-xl font-bold text-white mb-1">{selectedEvent.name}</h2>
+                  <h3 className="text-lg text-white/80">{selectedEvent.artist}</h3>
                 </div>
 
-                <div className="event-info">
-                  <h3>Información del Evento</h3>
-                  <p>
-                    <strong>Fecha:</strong> {format(new Date(selectedEvent.date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}
-                  </p>
-                  <div className="event-location">
-                    <h4>Ubicación</h4>
-                    <p>{selectedEvent.venue}</p>
-                    <p>{selectedEvent.location}</p>
+                <div className="space-y-4 text-white/80">
+                  <div className="flex items-center transform transition-transform duration-200 hover:translate-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>{format(new Date(selectedEvent.date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}</span>
+                  </div>
+
+                  <div className="flex items-center transform transition-transform duration-200 hover:translate-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <div>
+                      <p>{selectedEvent.venue}</p>
+                      <p>{selectedEvent.location}, {selectedEvent.city}</p>
+                    </div>
+                  </div>
+
+                  {selectedEvent.description && (
+                    <div className="pt-2 border-t border-white/10">
+                      <p className="text-sm">{selectedEvent.description}</p>
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t border-white/10">
+                    <button
+                      onClick={() => handleViewMore(selectedEvent.id)}
+                      className="w-full bg-[#1a48c4] text-white py-2 px-4 rounded-lg hover:bg-[#1a48c4]/90 transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center space-x-2"
+                    >
+                      <span>Ver más detalles</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
