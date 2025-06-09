@@ -11,11 +11,6 @@ router = APIRouter(
     tags=["auth"]
 )
 
-class UserCreate(BaseModel):
-    username: str
-    password: str
-    is_admin: bool = False
-
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -36,36 +31,5 @@ async def login_for_access_token(
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@router.post("/create-admin", response_model=Token)
-async def create_admin_user(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
-):
-    # Verificar si ya existe un usuario admin
-    existing_admin = db.query(models.User).filter(models.User.is_admin == True).first()
-    if existing_admin:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="An admin user already exists"
-        )
-    
-    # Crear nuevo usuario admin
-    hashed_password = auth.get_password_hash(user_data.password)
-    db_user = models.User(
-        username=user_data.username,
-        hashed_password=hashed_password,
-        is_admin=True
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    
-    # Generar token de acceso
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
-        data={"sub": db_user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"} 

@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from . import models
-from .database import engine
-from .routers import events, auth
+from . import models, auth
+from .database import engine, get_db
+from .routers import events, auth as auth_router
 import os
 import logging
 from dotenv import load_dotenv
@@ -17,6 +17,14 @@ load_dotenv()
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
+
+# Create initial admin user
+db = next(get_db())
+try:
+    auth.create_initial_admin(db)
+    logger.info("Initial admin user created successfully")
+except Exception as e:
+    logger.error(f"Error creating initial admin user: {e}")
 
 app = FastAPI(
     title="Agenda de Recitales API",
@@ -44,10 +52,10 @@ ALLOWED_ORIGINS.extend(["http://localhost:3000", "http://localhost:5173", "http:
 logger.info(f"CORS origins configurados: {ALLOWED_ORIGINS}")
 logger.info(f"PORT configurado en la variable de entorno: {os.getenv('PORT', 'No definido')}")
 
-# Configure CORS - asegúrate de que esto se haga antes de incluir los routers
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permitir todos los orígenes para el embedding
+    allow_origins=ALLOWED_ORIGINS,  # Solo permitir orígenes específicos
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -83,7 +91,7 @@ async def check_cors_headers(request: Request, call_next):
 
 # Include routers
 app.include_router(events.router)
-app.include_router(auth.router)
+app.include_router(auth_router.router)
 
 # Añadir un endpoint explícito para /events para asegurar que funciona
 @app.get("/events")
@@ -93,10 +101,6 @@ def read_events_direct(request: Request):
     logger.info(f"Redirigiendo a router de events...")
     # Esta función debe redirigir a la implementación en el enrutador
     from .routers.events import read_events_root
-    from .database import get_db
-    
-    # Obtener una sesión de base de datos
-    db = next(get_db())
     
     # Extraer parámetros de la solicitud
     params = dict(request.query_params)
