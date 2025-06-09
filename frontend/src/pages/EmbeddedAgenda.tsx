@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { es } from 'date-fns/locale';
-import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 interface Event {

@@ -1,3 +1,4 @@
+// src/pages/admin/EventFormPage.tsx
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
@@ -47,7 +48,10 @@ const EventFormPage = () => {
           
           setFormData({
             ...eventData,
-            date: formattedDate
+            date: formattedDate,
+            // Asegurar que latitude y longitude sean numbers o null
+            latitude: eventData.latitude ?? null,
+            longitude: eventData.longitude ?? null
           });
           setLoading(false);
         } catch (err) {
@@ -288,7 +292,7 @@ const EventFormPage = () => {
               <input
                 type="url"
                 name="image_url"
-                value={formData.image_url}
+                value={formData.image_url || ''}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
@@ -301,8 +305,38 @@ const EventFormPage = () => {
               <input
                 type="url"
                 name="ticket_url"
-                value={formData.ticket_url}
+                value={formData.ticket_url || ''}
                 onChange={handleChange}
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-1">
+                Latitud
+              </label>
+              <input
+                type="number"
+                name="latitude"
+                value={formData.latitude?.toString() || ''}
+                onChange={handleChange}
+                step="any"
+                placeholder="-31.4173"
+                className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-1">
+                Longitud
+              </label>
+              <input
+                type="number"
+                name="longitude"
+                value={formData.longitude?.toString() || ''}
+                onChange={handleChange}
+                step="any"
+                placeholder="-64.1833"
                 className="w-full px-3 py-2 border border-white/20 bg-[#101119] rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50"
               />
             </div>
@@ -324,13 +358,14 @@ const EventFormPage = () => {
           <div className="mb-6">
             <div className="flex items-center">
               <input
+                id="is_featured"
                 type="checkbox"
                 name="is_featured"
                 checked={formData.is_featured}
                 onChange={handleChange}
                 className="h-4 w-4 text-[#1a48c4] focus:ring-[#1a48c4] border-white/20 rounded"
               />
-              <label className="ml-2 block text-sm text-white/80">
+              <label htmlFor="is_featured" className="ml-2 block text-sm text-white/80">
                 Destacar evento
               </label>
             </div>
@@ -373,4 +408,4 @@ const EventFormPage = () => {
   );
 };
 
-export default EventFormPage; 
+export default EventFormPage;
