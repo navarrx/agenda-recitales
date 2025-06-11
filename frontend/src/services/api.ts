@@ -12,6 +12,15 @@ const apiClient = axios.create({
   }
 });
 
+// Add auth token to requests
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('adminToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Interceptor para logging y manejo de errores
 apiClient.interceptors.request.use((config) => {
   console.log('Request final:', {
