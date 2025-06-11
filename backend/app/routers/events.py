@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Body
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -21,22 +21,22 @@ def read_events_root(
     limit: int = 12,  # Cambiado a 12 para coincidir con el frontend
     genre: Optional[str] = None,
     city: Optional[str] = None,
-    date: Optional[date] = None,  # Nuevo parámetro date
+    date: Optional[date] = None,  # Compatibilidad con parámetro date
+    date_from: Optional[date] = Query(None, alias="date_from"),
+    date_to: Optional[date] = Query(None, alias="date_to"),
     search: Optional[str] = None,
     db: Session = Depends(database.get_db)
 ):
     """
     Get events with filtering options (route without leading slash)
     """
-    # Log para depurar
     logger.info(f"GET /events request received (root route)")
-    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, city={city}, date={date}")
+    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, city={city}, date={date}, date_from={date_from}, date_to={date_to}")
     logger.info(f"Headers: {dict(request.headers)}")
-    
     # Si se proporciona una fecha específica, usarla como date_from y date_to
-    date_from = date
-    date_to = date
-    
+    if date:
+        date_from = date
+        date_to = date
     events = crud.get_events(
         db, 
         skip=skip, 
@@ -56,22 +56,22 @@ def read_events(
     limit: int = 12,  # Cambiado a 12 para coincidir con el frontend
     genre: Optional[str] = None,
     city: Optional[str] = None,
-    date: Optional[date] = None,  # Nuevo parámetro date
+    date: Optional[date] = None,  # Compatibilidad con parámetro date
+    date_from: Optional[date] = Query(None, alias="date_from"),
+    date_to: Optional[date] = Query(None, alias="date_to"),
     search: Optional[str] = None,
     db: Session = Depends(database.get_db)
 ):
     """
     Get events with filtering options
     """
-    # Log para depurar
     logger.info(f"GET /events/ request received (with trailing slash)")
-    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, city={city}, date={date}")
+    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, city={city}, date={date}, date_from={date_from}, date_to={date_to}")
     logger.info(f"Headers: {dict(request.headers)}")
-    
     # Si se proporciona una fecha específica, usarla como date_from y date_to
-    date_from = date
-    date_to = date
-    
+    if date:
+        date_from = date
+        date_to = date
     events = crud.get_events(
         db, 
         skip=skip, 
@@ -152,6 +152,44 @@ def delete_event(
     if not success:
         raise HTTPException(status_code=404, detail="Event not found")
     return {"detail": "Event deleted successfully"}
+
+@router.post("/bulk-delete", response_model=dict)
+async def delete_events_bulk(
+    request: Request,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_admin_user)
+):
+    """
+    Delete multiple events (admin only)
+    """
+    try:
+        # Log the raw request body
+        body = await request.json()
+        logger.info(f"POST /events/bulk-delete request body: {body}")
+        
+        if not isinstance(body, dict) or 'event_ids' not in body:
+            raise HTTPException(status_code=422, detail="Request body must contain 'event_ids' array")
+        
+        event_ids = body['event_ids']
+        if not isinstance(event_ids, list):
+            raise HTTPException(status_code=422, detail="'event_ids' must be an array")
+        
+        logger.info(f"Processing deletion of {len(event_ids)} events")
+        
+        deleted_count = 0
+        for event_id in event_ids:
+            if crud.delete_event(db, event_id=event_id):
+                deleted_count += 1
+        
+        logger.info(f"Successfully deleted {deleted_count} events")
+        
+        return {
+            "detail": f"Successfully deleted {deleted_count} events",
+            "deleted_count": deleted_count
+        }
+    except Exception as e:
+        logger.error(f"Error in bulk delete: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/filters/genres", response_model=List[str])
 def get_genres(db: Session = Depends(database.get_db)):

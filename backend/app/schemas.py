@@ -49,4 +49,7 @@ class EventList(BaseModel):
     hasMore: bool
 
     class Config:
-        orm_mode = True 
+        orm_mode = True
+
+class BulkDeleteRequest(BaseModel):
+    event_ids: List[int] 
