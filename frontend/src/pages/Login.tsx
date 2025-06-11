@@ -40,9 +40,9 @@ const Login: React.FC = () => {
       {/* Logo */}
       <div className="mb-16 -mt-16">
         <img 
-          src="/images/logo_top.png" 
+          src="/images/fechas-logo2.png" 
           alt="Billboard Agenda Logo" 
-          className="h-24 w-auto"
+          className="h-40 w-auto"
         />
       </div>
 

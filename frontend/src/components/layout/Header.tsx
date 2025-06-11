@@ -47,9 +47,9 @@ const Header = () => {
             className="transition-all duration-300 hover-scale"
           >
             <img 
-              src="/images/logo_top.png" 
+              src="/images/fechas-logo2.png" 
               alt="Billboard Agenda Logo" 
-              className="h-16 w-auto"
+              className="h-24 w-auto"
             />
           </Link>
         </div>
