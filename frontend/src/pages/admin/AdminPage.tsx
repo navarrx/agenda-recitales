@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
-import { getEvents, deleteEvent } from '../../services/api';
+import { getEvents, deleteEvent, deleteEventsBulk } from '../../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Event } from '../../types';
@@ -12,6 +12,8 @@ const AdminPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedEvents, setSelectedEvents] = useState<number[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
   const eventsPerPage = 10;
 
   useEffect(() => {
@@ -46,6 +48,55 @@ const AdminPage = () => {
     }
   };
 
+  const handleSelectEvent = (eventId: number) => {
+    setSelectedEvents(prev => {
+      if (prev.includes(eventId)) {
+        return prev.filter(id => id !== eventId);
+      } else {
+        return [...prev, eventId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedEvents([]);
+    } else {
+      setSelectedEvents(currentEvents.map(event => event.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedEvents.length === 0) return;
+
+    const confirmMessage = selectedEvents.length === adminEvents.length
+      ? '¿Estás seguro de que deseas eliminar TODOS los eventos? Esta acción no se puede deshacer.'
+      : `¿Estás seguro de que deseas eliminar ${selectedEvents.length} eventos? Esta acción no se puede deshacer.`;
+
+    if (window.confirm(confirmMessage)) {
+      try {
+        setIsDeleting(true);
+        console.log('Attempting to delete events:', selectedEvents);
+        const result = await deleteEventsBulk(selectedEvents);
+        console.log('Delete result:', result);
+        
+        if (result.deleted_count > 0) {
+          setAdminEvents(adminEvents.filter(event => !selectedEvents.includes(event.id)));
+          setSelectedEvents([]);
+          setSelectAll(false);
+        } else {
+          setError('No se pudieron eliminar los eventos. Por favor, intenta de nuevo.');
+        }
+      } catch (err) {
+        console.error('Error deleting events:', err);
+        setError('Error al eliminar los eventos. Por favor, intenta de nuevo más tarde.');
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
+
   // Pagination
   const indexOfLastEvent = currentPage * eventsPerPage;
   const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
@@ -62,12 +113,23 @@ const AdminPage = () => {
         <h1 className="text-2xl font-bold text-white">
           Panel de Administración
         </h1>
-        <Link
-          to="/admin/events/new"
-          className="px-4 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 transition-all duration-300"
-        >
-          Nuevo Evento
-        </Link>
+        <div className="flex space-x-4">
+          {selectedEvents.length > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? 'Eliminando...' : `Eliminar ${selectedEvents.length} eventos`}
+            </button>
+          )}
+          <Link
+            to="/admin/events/new"
+            className="px-4 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 transition-all duration-300"
+          >
+            Nuevo Evento
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -88,6 +150,16 @@ const AdminPage = () => {
                 <thead className="bg-[#101119]">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={handleSelectAll}
+                          className="h-4 w-4 text-[#1a48c4] focus:ring-[#1a48c4] border-white/20 rounded"
+                        />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
                       Evento
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
@@ -107,6 +179,16 @@ const AdminPage = () => {
                 <tbody className="bg-[#101119] divide-y divide-white/10">
                   {currentEvents.map((event) => (
                     <tr key={event.id} className="hover:bg-white/5 transition-colors duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedEvents.includes(event.id)}
+                            onChange={() => handleSelectEvent(event.id)}
+                            className="h-4 w-4 text-[#1a48c4] focus:ring-[#1a48c4] border-white/20 rounded"
+                          />
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-white">
                           {event.name}
@@ -199,7 +281,7 @@ const AdminPage = () => {
         </>
       ) : (
         <div className="bg-[#101119] rounded-lg shadow-md p-8 text-center border border-white/10">
-          <h2 className="text-xl font-medium text-white mb-4">
+          <h2 className="text-xl font-semibold text-white mb-4">
             No hay eventos registrados
           </h2>
           <p className="text-white/60 mb-6">
