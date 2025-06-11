@@ -51,6 +51,7 @@ export const useEventStore = create<EventState>((set, get) => ({
     try {
       set({ loading: true });
       const { filters, pagination } = get();
+      console.log('[Store] fetchEvents - filtros enviados:', filters, 'paginacion:', pagination);
       const response = await getEvents(filters, pagination);
       
       set({

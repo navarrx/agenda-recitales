@@ -96,4 +96,13 @@ export const updateEvent = async (id: number, event: Partial<Event>): Promise<Ev
 
 export const deleteEvent = async (id: number): Promise<void> => {
   await apiClient.delete(`/events/${id}`);
+};
+
+export const deleteEventsBulk = async (ids: number[]): Promise<{ detail: string; deleted_count: number }> => {
+  console.log('Sending bulk delete request with IDs:', ids);
+  const response = await apiClient.post('/events/bulk-delete', { 
+    event_ids: ids
+  });
+  console.log('Bulk delete response:', response.data);
+  return response.data;
 }; 
