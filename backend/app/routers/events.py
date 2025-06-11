@@ -96,6 +96,18 @@ def read_event(event_id: int, db: Session = Depends(database.get_db)):
         raise HTTPException(status_code=404, detail="Event not found")
     return db_event
 
+@router.post("", response_model=schemas.Event)
+def create_event_root(
+    event: schemas.EventCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_admin_user)
+):
+    """
+    Create a new event (admin only) - route without trailing slash
+    """
+    logger.info(f"POST /events request received (root route)")
+    return crud.create_event(db=db, event=event)
+
 @router.post("/", response_model=schemas.Event)
 def create_event(
     event: schemas.EventCreate,
