@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import EventRequestModal from '../modals/EventRequestModal';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [showModal, setShowModal] = useState(false);
 
   return (
     <footer className="bg-[#101119] shadow-soft-up py-10 mt-12 transition-colors duration-300">
@@ -40,13 +43,19 @@ const Footer = () => {
               Contacto
             </h3>
             <p className="text-white/80 mb-4">
-              ¿Tienes alguna pregunta o sugerencia? No dudes en contactarnos.
+              ¿Tienes un evento que quieras agregar a nuestra agenda?
             </p>
-            <p className="flex items-center text-white/80 mb-2">
+            <button
+              onClick={() => setShowModal(true)}
+              className="btn bg-[#1a48c4] text-white hover:bg-[#1a48c4]/90 mb-4"
+            >
+              Solicitar agregar evento
+            </button>
+            <p className="flex items-center text-white/80">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              contacto@agendarecitales.com
+              contacto@fechasbybillboard.com
             </p>
           </div>
         </div>
@@ -63,6 +72,11 @@ const Footer = () => {
           </div>
         </div>
       </div>
+
+      <EventRequestModal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+      />
     </footer>
   );
 };
