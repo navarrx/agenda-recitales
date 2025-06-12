@@ -229,20 +229,20 @@ const HomePage = () => {
 
       {/* App Download Section */}
       <section 
-        className={`py-12 px-8 bg-[#101119] rounded-xl relative overflow-hidden transition-all duration-700 ease-out delay-300 ${
+        className={`py-8 px-4 sm:px-8 bg-[#101119] rounded-xl relative overflow-hidden transition-all duration-700 ease-out delay-300 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
         <div className="relative max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex-1 text-center md:text-left">
+            <div className="flex-1 w-full text-center md:text-left">
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
                 Descarga nuestra app
               </h2>
               <p className="text-lg text-white/90 mb-6">
                 Lleva Billboard contigo a todas partes. Descarga la app oficial y no te pierdas ningún evento.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center md:items-start w-full">
                 <a 
                   href="https://play.google.com/store/apps/details?id=com.billboard.app" 
                   target="_blank" 
@@ -252,7 +252,7 @@ const HomePage = () => {
                   <img 
                     src="/images/badges/google-play-badge-es.png" 
                     alt="Get it on Google Play" 
-                    className="h-12"
+                    className="h-12 max-w-[160px] w-auto"
                   />
                 </a>
                 <a 
@@ -264,12 +264,12 @@ const HomePage = () => {
                   <img 
                     src="/images/badges/app-store-badge-es.svg" 
                     alt="Download on the App Store" 
-                    className="h-12"
+                    className="h-12 max-w-[160px] w-auto"
                   />
                 </a>
               </div>
             </div>
-            <div className="flex-1 flex justify-center">
+            <div className="flex-1 flex justify-center mt-8 md:mt-0 w-full">
               <a 
                 href="https://billboard.ar" 
                 target="_blank" 
@@ -279,7 +279,7 @@ const HomePage = () => {
                 <img 
                   src="/images/logo_top.png" 
                   alt="Billboard App" 
-                  className="max-w-[200px] md:max-w-[300px]"
+                  className="max-w-[160px] md:max-w-[200px] w-full"
                 />
               </a>
             </div>
