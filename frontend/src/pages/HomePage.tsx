@@ -42,6 +42,23 @@ const HomePage = () => {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
+        {/* Video background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute min-w-full min-h-full object-cover blur-sm"
+            style={{ transform: 'scale(1)' }}
+          >
+            <source src="/videos/hero-background.mp4" type="video/mp4" />
+          </video>
+        </div>
+
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/60"></div>
+
         {/* Background animated pattern */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-repeat opacity-5" style={{ 

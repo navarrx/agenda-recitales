@@ -10,7 +10,7 @@ const Footer = () => {
           <div className="slide-up">
             <div className="flex items-center mb-4">
               <span className="text-2xl font-bold text-white">
-                <span className="text-white">fechas   </span>
+                <span className="text-white">Fechas   </span>
                 <span className="text-white">by Billboard</span>
               </span>
             </div>
