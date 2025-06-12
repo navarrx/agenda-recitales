@@ -796,254 +796,256 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         `}
       </style>
 
-      <div className="agenda-container">
-        <div className="search-bar-container">
-          <input
-            type="text"
-            placeholder="Buscar por nombre o artista..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-bar"
-          />
-          <svg 
-            className="search-icon" 
-            xmlns="http://www.w3.org/2000/svg" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+      <div className="embedded-agenda min-h-screen bg-[#101119]" style={{ width }}>
+        <div className="agenda-container">
+          <div className="search-bar-container">
+            <input
+              type="text"
+              placeholder="Buscar por nombre o artista..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="search-bar"
             />
-          </svg>
-        </div>
-        
-        <div className="filters-container">
-          <select
-            value={selectedGenre}
-            onChange={handleGenreChange}
-            className="filter-select"
-          >
-            <option value="">Géneros</option>
-            {allGenres.map(g => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
-          
-          <select
-            value={selectedCity}
-            onChange={handleCityChange}
-            className="filter-select"
-          >
-            <option value="">Ciudades</option>
-            {allCities.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          
-          <div className="date-picker-wrapper">
-            <DatePicker
-              selected={selectedDate}
-              onChange={handleDateChange}
-              locale={es}
-              dateFormat="dd/MM/yyyy"
-              placeholderText="Fecha"
-              minDate={new Date()}
-              customInput={
-                <button className="date-picker-button">
-                  {selectedDate ? selectedDate.toLocaleDateString('es-ES') : 'Fecha'}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </button>
-              }
-            />
+            <svg 
+              className="search-icon" 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+              />
+            </svg>
           </div>
           
-          {hasActiveFilters && (
-            <button 
-              onClick={handleClearFilters}
-              className="clear-filters"
+          <div className="filters-container">
+            <select
+              value={selectedGenre}
+              onChange={handleGenreChange}
+              className="filter-select"
             >
-              Limpiar filtros
-            </button>
-          )}
-      </div>
-
-      {loading ? (
-          <div className="loading">Cargando eventos...</div>
-      ) : error ? (
-          <div className="error">{error}</div>
-      ) : filteredEvents.length === 0 ? (
-          <div className="no-events">
-          No se encontraron eventos que coincidan con tu búsqueda
-        </div>
-      ) : (
-          <>
-            <table className={`events-table ${isAnimating ? 'fade-out' : 'fade-in'}`}>
-              <thead>
-                <tr>
-                  <th className="table-header">Artista</th>
-                  <th className="table-header">Fecha</th>
-                  <th className="table-header">Lugar</th>
-                  <th className="table-header">Sala</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEvents.map((event) => (
-                  <tr 
-                    key={event.id} 
-                    className={`table-row ${isAnimating ? 'fade-out' : 'fade-in'}`}
-                    onClick={() => handleEventClick(event)}
-                  >
-                    <td className="table-cell artist-cell">
-                      {event.artist}
-                    </td>
-                    <td className="table-cell date-cell">
-                      {format(new Date(event.date), "EEEE d 'de' MMMM", { locale: es })}
-                    </td>
-                    <td className="table-cell location-cell">
-                      {event.location}
-                    </td>
-                    <td className="table-cell venue-cell">
-                      {event.venue}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {hasMore && (
-              <div className="load-more-container">
-                <button 
-                  onClick={handleLoadMore}
-                  className="load-more-button"
-                  disabled={isLoadingMore}
-                >
-                  {isLoadingMore ? (
-                    <>
-                      Cargando...
-                      <div className="loading-spinner" />
-                    </>
-                  ) : (
-                    <>
-                      Cargar más eventos
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </>
-      )}
-
-      {isModalOpen && selectedEvent && (
-        <div 
-          className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-all duration-300 ${
-            isClosing ? 'opacity-0' : 'opacity-100'
-          }`}
-          onClick={closeModal}
-        >
-          <div 
-            className={`bg-[#101119] rounded-xl shadow-xl w-full max-w-lg transform transition-all duration-300 ${
-              isClosing 
-                ? 'opacity-0 scale-95 translate-y-4' 
-                : 'opacity-100 scale-100 translate-y-0'
-            }`}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="relative">
+              <option value="">Géneros</option>
+              {allGenres.map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+            
+            <select
+              value={selectedCity}
+              onChange={handleCityChange}
+              className="filter-select"
+            >
+              <option value="">Ciudades</option>
+              {allCities.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            
+            <div className="date-picker-wrapper">
+              <DatePicker
+                selected={selectedDate}
+                onChange={handleDateChange}
+                locale={es}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Fecha"
+                minDate={new Date()}
+                customInput={
+                  <button className="date-picker-button">
+                    {selectedDate ? selectedDate.toLocaleDateString('es-ES') : 'Fecha'}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                }
+              />
+            </div>
+            
+            {hasActiveFilters && (
               <button 
-                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10 hover:scale-110 transform duration-200"
-                onClick={closeModal}
+                onClick={handleClearFilters}
+                className="clear-filters"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                Limpiar filtros
               </button>
+            )}
+        </div>
 
-              <div className="relative h-48 overflow-hidden rounded-t-xl">
-                {selectedEvent.image_url ? (
-                  <img 
-                    src={selectedEvent.image_url} 
-                    alt={selectedEvent.name} 
-                    className="w-full h-full object-cover transform transition-transform duration-700 hover:scale-105"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-[#1a48c4]">
-                    <span className="text-white text-2xl font-bold">{selectedEvent.artist}</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#101119] via-transparent to-transparent"></div>
-              </div>
+        {loading ? (
+            <div className="loading">Cargando eventos...</div>
+        ) : error ? (
+            <div className="error">{error}</div>
+        ) : filteredEvents.length === 0 ? (
+            <div className="no-events">
+            No se encontraron eventos que coincidan con tu búsqueda
+          </div>
+        ) : (
+            <>
+              <table className={`events-table ${isAnimating ? 'fade-out' : 'fade-in'}`}>
+                <thead>
+                  <tr>
+                    <th className="table-header">Artista</th>
+                    <th className="table-header">Fecha</th>
+                    <th className="table-header">Lugar</th>
+                    <th className="table-header">Sala</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEvents.map((event) => (
+                    <tr 
+                      key={event.id} 
+                      className={`table-row ${isAnimating ? 'fade-out' : 'fade-in'}`}
+                      onClick={() => handleEventClick(event)}
+                    >
+                      <td className="table-cell artist-cell">
+                        {event.artist}
+                      </td>
+                      <td className="table-cell date-cell">
+                        {format(new Date(event.date), "EEEE d 'de' MMMM", { locale: es })}
+                      </td>
+                      <td className="table-cell location-cell">
+                        {event.location}
+                      </td>
+                      <td className="table-cell venue-cell">
+                        {event.venue}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-              <div className="p-6">
-                <div className="mb-4">
-                  <span className="inline-block bg-[#1a48c4] text-white text-sm font-semibold px-3 py-1 rounded-full mb-2 transform transition-transform duration-200 hover:scale-105">
-                    {selectedEvent.genre}
-                  </span>
-                  <h2 className="text-xl font-bold text-white mb-1">{selectedEvent.name}</h2>
-                  <h3 className="text-lg text-white/80">{selectedEvent.artist}</h3>
+              {hasMore && (
+                <div className="load-more-container">
+                  <button 
+                    onClick={handleLoadMore}
+                    className="load-more-button"
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        Cargando...
+                        <div className="loading-spinner" />
+                      </>
+                    ) : (
+                      <>
+                        Cargar más eventos
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M19 9l-7 7-7-7" 
+                          />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
+        )}
+
+        {isModalOpen && selectedEvent && (
+          <div 
+            className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-all duration-300 ${
+              isClosing ? 'opacity-0' : 'opacity-100'
+            }`}
+            onClick={closeModal}
+          >
+            <div 
+              className={`bg-[#101119] rounded-xl shadow-xl w-full max-w-lg transform transition-all duration-300 ${
+                isClosing 
+                  ? 'opacity-0 scale-95 translate-y-4' 
+                  : 'opacity-100 scale-100 translate-y-0'
+              }`}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="relative">
+                <button 
+                  className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10 hover:scale-110 transform duration-200"
+                  onClick={closeModal}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+
+                <div className="relative h-48 overflow-hidden rounded-t-xl">
+                  {selectedEvent.image_url ? (
+                    <img 
+                      src={selectedEvent.image_url} 
+                      alt={selectedEvent.name} 
+                      className="w-full h-full object-cover transform transition-transform duration-700 hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#1a48c4]">
+                      <span className="text-white text-2xl font-bold">{selectedEvent.artist}</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#101119] via-transparent to-transparent"></div>
                 </div>
 
-                <div className="space-y-4 text-white/80">
-                  <div className="flex items-center transform transition-transform duration-200 hover:translate-x-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>{format(new Date(selectedEvent.date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}</span>
+                <div className="p-6">
+                  <div className="mb-4">
+                    <span className="inline-block bg-[#1a48c4] text-white text-sm font-semibold px-3 py-1 rounded-full mb-2 transform transition-transform duration-200 hover:scale-105">
+                      {selectedEvent.genre}
+                    </span>
+                    <h2 className="text-xl font-bold text-white mb-1">{selectedEvent.name}</h2>
+                    <h3 className="text-lg text-white/80">{selectedEvent.artist}</h3>
                   </div>
 
-                  <div className="flex items-center transform transition-transform duration-200 hover:translate-x-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <div>
-                      <p>{selectedEvent.venue}</p>
-                      <p>{selectedEvent.location}, {selectedEvent.city}</p>
-                    </div>
-                  </div>
-
-                  {selectedEvent.description && (
-                    <div className="pt-2 border-t border-white/10">
-                      <p className="text-sm">{selectedEvent.description}</p>
-                    </div>
-                  )}
-
-                  <div className="pt-4 border-t border-white/10">
-                    <button
-                      onClick={() => handleViewMore(selectedEvent.id)}
-                      className="w-full bg-[#1a48c4] text-white py-2 px-4 rounded-lg hover:bg-[#1a48c4]/90 transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center space-x-2"
-                    >
-                      <span>Ver más detalles</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <div className="space-y-4 text-white/80">
+                    <div className="flex items-center transform transition-transform duration-200 hover:translate-x-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                    </button>
+                      <span>{format(new Date(selectedEvent.date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}</span>
+                    </div>
+
+                    <div className="flex items-center transform transition-transform duration-200 hover:translate-x-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <div>
+                        <p>{selectedEvent.venue}</p>
+                        <p>{selectedEvent.location}, {selectedEvent.city}</p>
+                      </div>
+                    </div>
+
+                    {selectedEvent.description && (
+                      <div className="pt-2 border-t border-white/10">
+                        <p className="text-sm">{selectedEvent.description}</p>
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t border-white/10">
+                      <button
+                        onClick={() => handleViewMore(selectedEvent.id)}
+                        className="w-full bg-[#1a48c4] text-white py-2 px-4 rounded-lg hover:bg-[#1a48c4]/90 transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center space-x-2"
+                      >
+                        <span>Ver más detalles</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
     </>
   );
