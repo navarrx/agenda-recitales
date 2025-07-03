@@ -109,23 +109,29 @@ const AdminPage = () => {
 
   return (
     <Layout>
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-white">
           Panel de Administración
         </h1>
-        <div className="flex space-x-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
+          <Link
+            to="/admin/event-requests"
+            className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-all duration-300 text-center"
+          >
+            Solicitudes de eventos
+          </Link>
           {selectedEvents.length > 0 && (
             <button
               onClick={handleDeleteSelected}
               disabled={isDeleting}
-              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-center"
             >
               {isDeleting ? 'Eliminando...' : `Eliminar ${selectedEvents.length} eventos`}
             </button>
           )}
           <Link
             to="/admin/events/new"
-            className="px-4 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 transition-all duration-300"
+            className="px-4 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 transition-all duration-300 text-center"
           >
             Nuevo Evento
           </Link>
@@ -144,7 +150,8 @@ const AdminPage = () => {
         </div>
       ) : adminEvents.length > 0 ? (
         <>
-          <div className="bg-[#101119] rounded-lg shadow-md overflow-hidden border border-white/10">
+          {/* Desktop table */}
+          <div className="hidden sm:block bg-[#101119] rounded-lg shadow-md overflow-hidden border border-white/10">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-white/10">
                 <thead className="bg-[#101119]">
@@ -193,47 +200,36 @@ const AdminPage = () => {
                         <div className="text-sm font-medium text-white">
                           {event.name}
                         </div>
-                        <div className="text-sm text-white/60">
-                          {event.genre}
-                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-white">
+                        <div className="text-sm text-white/80">
                           {event.artist}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-white">
-                          {format(new Date(event.date), 'dd MMM yyyy', { locale: es })}
-                        </div>
-                        <div className="text-sm text-white/60">
-                          {format(new Date(event.date), 'HH:mm', { locale: es })}
+                        <div className="text-sm text-white/80">
+                          {format(new Date(event.date), 'dd MMM yyyy - HH:mm', { locale: es })}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-white">
+                        <div className="text-sm text-white/80">
                           {event.venue}
                         </div>
-                        <div className="text-sm text-white/60">
-                          {event.city}
-                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link
-                            to={`/admin/events/${event.id}`}
-                            className="text-[#1a48c4] hover:text-[#1a48c4]/80 transition-colors duration-200"
-                          >
-                            Editar
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteEvent(event.id)}
-                            disabled={isDeleting}
-                            className="text-red-400 hover:text-red-300 transition-colors duration-200 disabled:text-white/40 disabled:cursor-not-allowed"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap flex gap-2">
+                        <Link
+                          to={`/admin/events/${event.id}`}
+                          className="px-2 py-1 bg-[#1a48c4] text-white rounded hover:bg-[#1a48c4]/90 text-xs"
+                        >
+                          Editar
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteEvent(event.id)}
+                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                          disabled={isDeleting}
+                        >
+                          Eliminar
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -241,58 +237,80 @@ const AdminPage = () => {
               </table>
             </div>
           </div>
-
+          {/* Mobile cards */}
+          <div className="sm:hidden flex flex-col gap-4">
+            {currentEvents.map((event) => (
+              <div key={event.id} className="bg-[#101119] rounded-lg shadow-md border border-white/10 p-4 flex flex-col gap-2 relative">
+                <div className="absolute top-4 left-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedEvents.includes(event.id)}
+                    onChange={() => handleSelectEvent(event.id)}
+                    className="h-4 w-4 text-[#1a48c4] focus:ring-[#1a48c4] border-white/20 rounded"
+                  />
+                </div>
+                <div className="pl-8">
+                  <div className="text-xs text-white/50 uppercase mb-1">Evento</div>
+                  <div className="text-base font-bold text-white break-words mb-1">{event.name}</div>
+                  <div className="text-xs text-white/50 uppercase mb-1">Artista</div>
+                  <div className="text-sm text-white/80 break-words mb-1">{event.artist}</div>
+                  <div className="text-xs text-white/50 uppercase mb-1">Fecha</div>
+                  <div className="text-sm text-white/80 mb-1">{format(new Date(event.date), 'dd MMM yyyy - HH:mm', { locale: es })}</div>
+                  <div className="text-xs text-white/50 uppercase mb-1">Acciones</div>
+                  <div className="flex gap-2 mb-1">
+                    <Link
+                      to={`/admin/events/${event.id}`}
+                      className="px-3 py-1 bg-[#1a48c4] text-white rounded hover:bg-[#1a48c4]/90 text-xs"
+                    >
+                      Editar
+                    </Link>
+                    <button
+                      onClick={() => handleDeleteEvent(event.id)}
+                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                      disabled={isDeleting}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-6">
-              <nav className="flex items-center">
-                <button
-                  onClick={() => paginate(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 rounded-md mr-2 bg-[#101119] border border-white/20 text-white hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  Anterior
-                </button>
-                
-                {Array.from({ length: totalPages }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => paginate(index + 1)}
-                    className={`px-3 py-1 rounded-md mx-1 transition-all duration-200 ${
-                      currentPage === index + 1
-                        ? 'bg-[#1a48c4] text-white'
-                        : 'bg-[#101119] border border-white/20 text-white hover:bg-white/5'
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-                
-                <button
-                  onClick={() => paginate(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 rounded-md ml-2 bg-[#101119] border border-white/20 text-white hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  Siguiente
-                </button>
-              </nav>
-            </div>
-          )}
+          <div className="mt-8 flex justify-center gap-2 flex-wrap">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => paginate(page)}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 ${currentPage === page ? 'bg-[#1a48c4] text-white' : 'bg-white/10 text-white/70 hover:bg-[#1a48c4]/30'}`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
         </>
       ) : (
         <div className="bg-[#101119] rounded-lg shadow-md p-8 text-center border border-white/10">
-          <h2 className="text-xl font-semibold text-white mb-4">
-            No hay eventos registrados
-          </h2>
-          <p className="text-white/60 mb-6">
-            Comienza creando tu primer evento haciendo clic en el botón "Nuevo Evento".
-          </p>
-          <Link
-            to="/admin/events/new"
-            className="px-6 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 transition-all duration-300"
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-16 w-16 mx-auto text-white/40 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            Crear evento
-          </Link>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1}
+              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <h3 className="text-xl font-medium text-white mb-2">
+            No se encontraron eventos
+          </h3>
+          <p className="text-white/80">
+            Intenta cambiar los filtros o vuelve más tarde.
+          </p>
         </div>
       )}
     </Layout>
