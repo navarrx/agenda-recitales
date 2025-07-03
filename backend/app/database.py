@@ -14,11 +14,11 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # If DATABASE_URL is not set, construct it from individual parameters
 if not DATABASE_URL:
-    DB_USER = os.getenv("POSTGRES_USER", "postgres")
-    DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
-    DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
-    DB_PORT = os.getenv("POSTGRES_PORT", "5432")
-    DB_NAME = os.getenv("POSTGRES_DB", "agenda_db")
+    DB_USER = os.getenv("POSTGRES_USER")
+    DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+    DB_HOST = os.getenv("POSTGRES_HOST")
+    DB_PORT = os.getenv("POSTGRES_PORT")
+    DB_NAME = os.getenv("POSTGRES_DB")
     DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 print(f"Connecting to database at: {DATABASE_URL}")

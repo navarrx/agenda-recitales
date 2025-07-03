@@ -4,6 +4,8 @@ from fastapi.responses import JSONResponse
 from . import models, auth
 from .database import engine, get_db
 from .routers import events, auth as auth_router
+from .routers import event_requests, upload
+from .middleware import add_security_middleware
 import os
 import logging
 from dotenv import load_dotenv
@@ -31,6 +33,9 @@ app = FastAPI(
     description="API para la aplicación web de agenda de eventos musicales",
     version="0.1.0"
 )
+
+# Agregar middleware de seguridad
+add_security_middleware(app)
 
 # Obtener ALLOWED_ORIGINS de variables de entorno o usar valor por defecto
 ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv(
@@ -92,6 +97,8 @@ async def check_cors_headers(request: Request, call_next):
 # Include routers
 app.include_router(events.router)
 app.include_router(auth_router.router)
+app.include_router(event_requests.router)
+app.include_router(upload.router)
 
 # Añadir un endpoint explícito para /events para asegurar que funciona
 @app.get("/events")

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_, and_
-from . import models, schemas
+from . import models, schemas, security
 from typing import List, Optional
 from datetime import datetime, date
 
@@ -12,7 +12,8 @@ def get_events(
     city: Optional[str] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
-    search: Optional[str] = None
+    search: Optional[str] = None,
+    date_types: Optional[List[str]] = None
 ):
     query = db.query(models.Event)
     
@@ -26,12 +27,19 @@ def get_events(
     if date_to:
         query = query.filter(func.date(models.Event.date) <= date_to)
     if search:
+        # Validación adicional de seguridad para el parámetro de búsqueda
+        if len(search) > 100:
+            search = search[:100]  # Limitar longitud
+        
         search_filter = or_(
             models.Event.name.ilike(f"%{search}%"),
             models.Event.artist.ilike(f"%{search}%"),
             models.Event.description.ilike(f"%{search}%")
         )
         query = query.filter(search_filter)
+    if date_types:
+        # Filtrar eventos que tengan todas las características seleccionadas
+        query = query.filter(models.Event.date_types.contains(date_types))
     
     # Count total results
     total = query.count()
@@ -82,4 +90,76 @@ def get_genres(db: Session):
     return db.query(models.Event.genre).distinct().all()
 
 def get_cities(db: Session):
-    return db.query(models.Event.city).distinct().all() 
+    return db.query(models.Event.city).distinct().all()
+
+def get_nearby_events(
+    db: Session,
+    lat: float,
+    lng: float,
+    radius: float = 50,  # km
+    skip: int = 0,
+    limit: int = 12
+):
+    """
+    Get events within a certain radius of given coordinates using Haversine formula
+    """
+    # Haversine formula in SQL
+    # 6371 is Earth's radius in kilometers
+    distance_expr = 6371 * func.acos(
+        func.cos(func.radians(lat)) *
+        func.cos(func.radians(models.Event.latitude)) *
+        func.cos(func.radians(models.Event.longitude) - func.radians(lng)) +
+        func.sin(func.radians(lat)) *
+        func.sin(func.radians(models.Event.latitude))
+    )
+    
+    # Query events with coordinates, calculate distance, and filter by radius
+    query = db.query(models.Event, distance_expr.label('distance')).filter(
+        models.Event.latitude.isnot(None),
+        models.Event.longitude.isnot(None),
+        distance_expr <= radius
+    ).order_by('distance')
+    
+    # Count total results
+    total = query.count()
+    
+    # Apply pagination
+    results = query.offset(skip).limit(limit + 1).all()
+    
+    # Check if there are more results
+    has_more = len(results) > limit
+    if has_more:
+        results = results[:-1]  # Remove the extra item we fetched
+    
+    # Extract events from results (results are tuples of (event, distance))
+    events = [result[0] for result in results]
+    
+    return {
+        "items": events,
+        "total": total,
+        "hasMore": has_more
+    }
+
+def create_event_request(db: Session, event_request: schemas.EventRequestCreate):
+    db_request = models.EventRequest(**event_request.dict())
+    db.add(db_request)
+    db.commit()
+    db.refresh(db_request)
+    return db_request
+
+def get_event_requests(db: Session, skip: int = 0, limit: int = 100, status: Optional[str] = None):
+    query = db.query(models.EventRequest)
+    if status:
+        query = query.filter(models.EventRequest.status == status)
+    total = query.count()
+    requests = query.order_by(models.EventRequest.created_at.desc()).offset(skip).limit(limit).all()
+    return {"items": requests, "total": total}
+
+def update_event_request_status(db: Session, request_id: int, status: str):
+    db_request = db.query(models.EventRequest).filter(models.EventRequest.id == request_id).first()
+    if db_request:
+        db_request.status = status
+        db_request.updated_at = func.now()
+        db.commit()
+        db.refresh(db_request)
+    return db_request 
