@@ -1,11 +1,10 @@
 import { create } from 'zustand';
 import { Event, EventFilters, PaginationParams } from '../types';
-import { getEvents, getEvent, getGenres, getCities } from '../services/api';
+import { getEvents, getEvent, getCities } from '../services/api';
 
 interface EventState {
   events: Event[];
   event: Event | null;
-  genres: string[];
   cities: string[];
   filters: EventFilters;
   pagination: PaginationParams;
@@ -16,7 +15,6 @@ interface EventState {
   // Actions
   fetchEvents: () => Promise<void>;
   fetchEvent: (id: number) => Promise<void>;
-  fetchGenres: () => Promise<void>;
   fetchCities: () => Promise<void>;
   setFilters: (filters: Partial<EventFilters>) => void;
   resetFilters: () => void;
@@ -29,17 +27,16 @@ const DEFAULT_PAGINATION: PaginationParams = {
 };
 
 const DEFAULT_FILTERS: EventFilters = {
-  genre: undefined,
   city: undefined,
   dateFrom: undefined,
   dateTo: undefined,
   search: undefined,
+  dateTypes: undefined,
 };
 
 export const useEventStore = create<EventState>((set, get) => ({
   events: [],
   event: null,
-  genres: [],
   cities: [],
   filters: DEFAULT_FILTERS,
   pagination: DEFAULT_PAGINATION,
@@ -50,10 +47,16 @@ export const useEventStore = create<EventState>((set, get) => ({
   fetchEvents: async () => {
     try {
       set({ loading: true });
-      const { filters, pagination } = get();
-      console.log('[Store] fetchEvents - filtros enviados:', filters, 'paginacion:', pagination);
-      const response = await getEvents(filters, pagination);
-      
+      let { filters, pagination } = get();
+      // Si el usuario no seleccionó filtro de fecha, aplicar dateFrom = hoy SOLO en la consulta
+      let filtersToSend = { ...filters };
+      if (!filters.dateFrom && !filters.dateTo) {
+        const today = new Date();
+        const todayISO = today.toISOString().slice(0, 10);
+        filtersToSend.dateFrom = todayISO;
+      }
+      console.log('[Store] fetchEvents - filtros enviados:', filtersToSend, 'paginacion:', pagination);
+      const response = await getEvents(filtersToSend, pagination);
       set({
         events: response.items,
         totalEvents: response.total,
@@ -74,15 +77,6 @@ export const useEventStore = create<EventState>((set, get) => ({
     } catch (error) {
       console.error('Error fetching event details:', error);
       set({ loading: false });
-    }
-  },
-
-  fetchGenres: async () => {
-    try {
-      const genres = await getGenres();
-      set({ genres });
-    } catch (error) {
-      console.error('Error fetching genres:', error);
     }
   },
 

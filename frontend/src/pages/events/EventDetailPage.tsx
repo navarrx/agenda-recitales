@@ -5,6 +5,7 @@ import { es } from 'date-fns/locale';
 import Layout from '../../components/layout/Layout';
 import { useEventStore } from '../../store/eventStore';
 import EventMap from '../../components/maps/EventMap';
+import { ChevronLeft, DollarSign, Ticket } from 'lucide-react';
 
 const EventDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,59 @@ const EventDetailPage = () => {
 
   const isEventPast = (date: string) => {
     return isPast(new Date(date));
+  };
+
+  // Helper function to determine if event is paid
+  const isPaidEvent = (event: any) => {
+    return event.date_types?.includes('pago') || event.ticket_price;
+  };
+
+  // Helper function to get event type badges
+  const getEventTypeBadges = (event: any) => {
+    const badges = [];
+    
+    if (isPaidEvent(event)) {
+      badges.push(
+        <span key="paid" className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+          <DollarSign className="w-3 h-3" />
+          Pago
+        </span>
+      );
+    } else {
+      badges.push(
+        <span key="free" className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+          <Ticket className="w-3 h-3" />
+          Gratis
+        </span>
+      );
+    }
+
+    // Add other event types
+    if (event.date_types?.includes('festival')) {
+      badges.push(
+        <span key="festival" className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+          Festival
+        </span>
+      );
+    }
+    
+    if (event.date_types?.includes('concierto')) {
+      badges.push(
+        <span key="concierto" className="bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+          Concierto
+        </span>
+      );
+    }
+    
+    if (event.date_types?.includes('dj')) {
+      badges.push(
+        <span key="dj" className="bg-pink-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+          DJ
+        </span>
+      );
+    }
+
+    return badges;
   };
 
   if (loading) {
@@ -60,11 +114,9 @@ const EventDetailPage = () => {
         <div className="mb-6">
           <Link
             to="/events"
-            className="inline-flex items-center text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
+            className="inline-flex items-center text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 transition-colors group"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-            </svg>
+            <ChevronLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
             Volver a eventos
           </Link>
         </div>
@@ -98,9 +150,7 @@ const EventDetailPage = () => {
               {/* Event info */}
               <div>
                 <div className="flex flex-wrap items-center gap-3 mb-6">
-                  <span className="bg-primary-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                    {event.genre}
-                  </span>
+                  {getEventTypeBadges(event)}
                   {event.is_featured && (
                     <span className="bg-secondary-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
                       Destacado
@@ -122,6 +172,19 @@ const EventDetailPage = () => {
                     <span className="text-white/60 w-24">Fecha:</span>
                     <span className="text-white text-xl">{formattedDate}</span>
                   </div>
+
+                  {/* Precio del ticket */}
+                  {isPaidEvent(event) && event.ticket_price && (
+                    <div className="flex items-center">
+                      <span className="text-white/60 w-24">Precio:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white text-xl font-semibold">
+                          ${event.ticket_price.toLocaleString('es-AR')} ARS
+                        </span>
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center">
                     <span className="text-white/60 w-24">Ciudad:</span>
@@ -159,9 +222,11 @@ const EventDetailPage = () => {
                           </svg>
                         </span>
                         <span className="absolute flex items-center justify-center w-full h-full transition-all duration-300 transform group-hover:translate-x-full ease">
-                          Comprar entradas
+                          {isPaidEvent(event) ? 'Comprar entradas' : 'Obtener entradas'}
                         </span>
-                        <span className="relative invisible">Comprar entradas</span>
+                        <span className="relative invisible">
+                          {isPaidEvent(event) ? 'Comprar entradas' : 'Obtener entradas'}
+                        </span>
                       </a>
                       <span className="text-sm text-white/40 flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

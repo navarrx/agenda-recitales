@@ -1,7 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useEventStore } from '../../store/eventStore';
 import EventCard from './EventCard';
+import EventListItem from './EventListItem';
 import EventFilters from './EventFilters';
+
+function getTodayISO() {
+  const today = new Date();
+  return today.toISOString().slice(0, 10);
+}
 
 const EventList = () => {
   const { 
@@ -11,12 +17,16 @@ const EventList = () => {
     totalEvents,
     fetchEvents, 
     setFilters, 
-    loadMoreEvents 
+    loadMoreEvents,
+    filters
   } = useEventStore();
+
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   useEffect(() => {
     fetchEvents();
-  }, [fetchEvents]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleFilterChange = (filters: any) => {
     setFilters(filters);
@@ -24,19 +34,28 @@ const EventList = () => {
 
   return (
     <div>
-      <EventFilters onFilterChange={handleFilterChange} />
+      <EventFilters 
+        onFilterChange={handleFilterChange} 
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
       
       {events.length > 0 ? (
         <>
-          <div className="text-white/80 mb-4">
-            Mostrando {events.length} de {totalEvents} eventos
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
+          {viewMode === 'card' ? (
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+              {events.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2 sm:space-y-4">
+              <EventListItem isHeader />
+              {events.map((event) => (
+                <EventListItem key={event.id} event={event} />
+              ))}
+            </div>
+          )}
           
           {hasMore && (
             <div className="mt-8 flex justify-center">
