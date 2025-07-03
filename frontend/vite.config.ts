@@ -29,7 +29,7 @@ export default defineConfig({
       'healthcheck.railway.app',
       'localhost',
       '127.0.0.1',
-      'agenda-recitales-production.up.railway.app',
+      // 'agenda-recitales-production.up.railway.app',
       '*.up.railway.app'
     ]
   }
