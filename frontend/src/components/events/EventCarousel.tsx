@@ -59,7 +59,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             duration: remainingDuration,
             ease: "linear",
             from: startPosition,
-            to: targetPosition,
           },
         },
       });
