@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { Event, EventFilters, EventListResponse, PaginationParams } from '../types';
+import { Event, EventFilters, EventListResponse, PaginationParams, EventRequest, EventRequestCreate, EventRequestStatusUpdate } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://agenda-recitales-backend-production.up.railway.app';
+const API_URL = import.meta.env.VITE_API_URL;
 console.log('[API_URL]', API_URL);
 
 const apiClient = axios.create({
@@ -52,7 +52,7 @@ export const getEvents = async (
   filters: EventFilters = {},
   pagination: PaginationParams = { skip: 0, limit: 12 }
 ): Promise<EventListResponse> => {
-  const { genre, city, dateFrom, dateTo, search } = filters;
+  const { genre, city, dateFrom, dateTo, search, dateTypes } = filters;
   const { skip, limit } = pagination;
 
   const params = new URLSearchParams();
@@ -64,6 +64,9 @@ export const getEvents = async (
   if (dateFrom) params.append('date_from', dateFrom);
   if (dateTo) params.append('date_to', dateTo);
   if (search) params.append('search', search);
+  if (dateTypes && dateTypes.length > 0) {
+    dateTypes.forEach((type) => params.append('date_types', type));
+  }
 
   const response = await apiClient.get(`/events?${params.toString()}`);
   return response.data;
@@ -104,5 +107,21 @@ export const deleteEventsBulk = async (ids: number[]): Promise<{ detail: string;
     event_ids: ids
   });
   console.log('Bulk delete response:', response.data);
+  return response.data;
+};
+
+export const createEventRequest = async (data: EventRequestCreate): Promise<EventRequest> => {
+  const response = await apiClient.post('/event-requests/', data);
+  return response.data;
+};
+
+export const getEventRequests = async (status?: string): Promise<EventRequest[]> => {
+  const params = status ? { status } : {};
+  const response = await apiClient.get('/event-requests/', { params });
+  return response.data;
+};
+
+export const updateEventRequestStatus = async (id: number, status: string): Promise<EventRequest> => {
+  const response = await apiClient.put(`/event-requests/${id}/status`, { status });
   return response.data;
 }; 
