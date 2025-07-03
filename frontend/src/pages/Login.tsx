@@ -14,13 +14,15 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
-
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/token`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          username,
+          password,
+        }),
       });
 
       if (!response.ok) {

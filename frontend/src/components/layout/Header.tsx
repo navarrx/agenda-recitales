@@ -35,8 +35,8 @@ const Header = () => {
 
   const headerClasses = `sticky top-0 z-50 transition-all duration-300 
     ${isScrolled 
-      ? 'bg-[#101119]/80 backdrop-blur-md shadow-md py-2' 
-      : 'bg-[#101119]/60 backdrop-blur-sm py-4'}`;
+      ? 'bg-[#101119]/80 backdrop-blur-md shadow-md' 
+      : 'bg-[#101119]/60 backdrop-blur-sm'} py-3`;
 
   return (
     <header className={headerClasses}>

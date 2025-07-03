@@ -8,6 +8,7 @@ import AdminPage from './pages/admin/AdminPage';
 import EventFormPage from './pages/admin/EventFormPage';
 import EmbeddedAgenda from '@/pages/EmbeddedAgenda';
 import Login from './pages/Login';
+import EventRequestsPage from './pages/admin/EventRequestsPage';
 
 function App() {
   return (
@@ -42,6 +43,14 @@ function App() {
           }
         />
         <Route path="/embed" element={<EmbeddedAgenda />} />
+        <Route
+          path="/admin/event-requests"
+          element={
+            <ProtectedRoute>
+              <EventRequestsPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </AuthProvider>
   );
