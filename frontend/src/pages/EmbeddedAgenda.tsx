@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams, useNavigate  } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { es } from 'date-fns/locale';
@@ -87,6 +87,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   initialFilters = {}
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -482,7 +483,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
   const handleViewMore = (eventId: number) => {
     // Abrir en una nueva pestaña
-    window.open(`${eventId}`, '_blank');
+    //window.open(`${eventId}`, '_blank');
+    navigate(`/events/${eventId}`);
   };
 
   const openSortModal = () => {
@@ -2026,6 +2028,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                                 marginRight: idx === arr.length - 1 ? '0' : undefined,
                                 scrollSnapAlign: 'start',
                               }}
+                              onClick={() => handleViewMore(event.id)}
                             >
                               {event.image_url ? (
                                 <img src={event.image_url} alt={event.name} className="w-full h-[210px] object-cover" style={{borderRadius: 0, marginBottom: 0}} />
