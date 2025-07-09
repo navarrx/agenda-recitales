@@ -527,11 +527,19 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           }
           .agenda-container {
             width: ${width};
-            overflow: auto;
-            padding: 1.5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 0;
             background: ${themeParam === 'dark' ? '#101119' : '#ffffff'};
             color: ${themeParam === 'dark' ? '#ffffff' : '#101119'};
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          }
+
+          .white-section {
+            width: 100vw;
+            margin-left: calc(-50vw + 50%);
+            background: #ffffff;
+            color: #101119;
           }
 
           .search-bar-container {
@@ -1113,6 +1121,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             max-width: 500px;
             max-height: 100vh;
             overflow-y: auto;
+            overflow-x: hidden;
             position: relative;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
             animation: slideUp 0.3s ease;
@@ -1160,6 +1169,9 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
           .filters-body {
             padding: 2rem;
+            overflow-x: hidden;
+            word-wrap: break-word;
+            word-break: break-word;
           }
 
           .filter-section {
@@ -1772,9 +1784,9 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         `}
       </style>
 
-      <div className="embedded-agenda min-h-screen bg-[#101119]" style={{ width, fontFamily: 'Poppins, Inter, sans-serif' }}>
+      <div className="embedded-agenda min-h-screen bg-[#101119]" style={{ width, fontFamily: 'Poppins, Inter, sans-serif', overflowX: 'hidden' }}>
         <div className="agenda-container">
-          <div className="mb-8">
+          <div className="mb-8 px-6">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
               Eventos y Recitales
             </h1>
@@ -1853,7 +1865,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
           {/* Vista LISTA de eventos */}
           {viewMode === 'list' && (
-            <div className="w-screen bg-white text-[#101119] py-8 mb-2" style={{marginLeft: '50%', transform: 'translateX(-50%)'}}>
+            <div className="white-section py-8 mb-0">
               <div className="px-4 md:px-8">
                 <h2 className="text-2xl md:text-3xl font-bold mb-1">Lista de Eventos y recitales</h2>
                 <p className="text-base md:text-lg text-[#101119]/70 mb-6">Los eventos en orden cronológico</p>
@@ -1923,7 +1935,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             <>
               {/* Sección de Resultados cuando hay filtros activos */}
               {(selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || searchTerm) && (
-                <div className="w-screen bg-white text-[#101119] py-8" style={{marginLeft: '50%', transform: 'translateX(-50%)'}}>
+                <div className="white-section py-8">
                   <div className="px-4 md:px-8">
                     <h2 className="text-2xl md:text-2xl font mb-8" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
                       Resultados: {filteredResults.length}
@@ -1946,7 +1958,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                               marginRight: idx === arr.length - 1 ? '0' : undefined,
                               scrollSnapAlign: 'start',
                             }}
-                            onClick={() => handleViewMore(event.id)}
+                            onClick={() => handleEventClick(event)}
                           >
                             {event.image_url ? (
                               <img src={event.image_url} alt={event.name} className="w-full h-[210px] object-cover" style={{borderRadius: 0, marginBottom: 0}} />
@@ -2000,7 +2012,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
               {/* Secciones Destacados y Cercanos a ti - solo cuando NO hay filtros activos */}
               {!(selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || searchTerm) && (
                 <>
-                  <div className="w-screen bg-white text-[#101119] py-8" style={{marginLeft: '50%', transform: 'translateX(-50%)'}}>
+                  <div className="white-section py-8">
                     <div className="px-4 md:px-8">
                       <h2 className="text-2xl md:text-3xl font-bold mb-1" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
                         Destacados
@@ -2008,7 +2020,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       <p className="text-base md:text-lg text-[#101119]/70 mb-6" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
                         Los eventos más importantes
                       </p>
-                      <div className="flex overflow-x-auto gap-4 pb-2 px-4 md:px-8" style={{scrollSnapType: 'x mandatory'}}>
+                      <div className="flex overflow-x-auto gap-4 pb-2" style={{scrollSnapType: 'x mandatory'}}>
                         {events.filter(e => e.is_featured).length === 0 ? (
                           <div className="flex-1 text-center text-[#101119]/60">No hay eventos destacados</div>
                         ) : (
@@ -2026,6 +2038,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                                 marginRight: idx === arr.length - 1 ? '0' : undefined,
                                 scrollSnapAlign: 'start',
                               }}
+                              onClick={() => handleEventClick(event)}
                             >
                               {event.image_url ? (
                                 <img src={event.image_url} alt={event.name} className="w-full h-[210px] object-cover" style={{borderRadius: 0, marginBottom: 0}} />
@@ -2074,7 +2087,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div className="w-screen bg-white text-[#101119] py-8" style={{marginLeft: '50%', transform: 'translateX(-50%)'}}>
+                  <div className="white-section py-8">
                     <div className="px-4 md:px-8">
                       <h2 className="text-2xl md:text-3xl font-bold mb-1" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
                         Cercanos a ti
@@ -2089,7 +2102,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       ) : nearbyEvents.length === 0 ? (
                         <div className="text-center text-[#101119]/60">No hay eventos cercanos a tu ubicación.</div>
                       ) : (
-                        <div className="flex overflow-x-auto gap-4 pb-2 px-4 md:px-8" style={{scrollSnapType: 'x mandatory'}}>
+                        <div className="flex overflow-x-auto gap-4 pb-2" style={{scrollSnapType: 'x mandatory'}}>
                           {nearbyEvents.map((event, idx, arr) => (
                             <div
                               key={event.id}
@@ -2104,6 +2117,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                                 marginRight: idx === arr.length - 1 ? '0' : undefined,
                                 scrollSnapAlign: 'start',
                               }}
+                              onClick={() => handleEventClick(event)}
                             >
                               {event.image_url ? (
                                 <img src={event.image_url} alt={event.name} className="w-full h-[210px] object-cover" style={{borderRadius: 0, marginBottom: 0}} />
@@ -2492,6 +2506,94 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                   autoFocus
                 />
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalles del Evento */}
+      {isModalOpen && selectedEvent && (
+        <div className="filters-modal-overlay" onClick={closeModal}>
+          <div className="filters-modal-content" onClick={e => e.stopPropagation()}>
+            {/* Barra superior con flecha y nombre del artista */}
+            <div className="filters-header">
+              <div className="flex items-center gap-3">
+                <button 
+                  className="filters-close"
+                  onClick={closeModal}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                  </svg>
+                </button>
+                <h3 className="text-white font-normal" style={{fontSize: '16px'}}>{selectedEvent.artist}</h3>
+              </div>
+              <div className="w-6 h-6"></div> {/* Espaciador para mantener el layout */}
+            </div>
+
+            {/* Imagen del evento */}
+            <div className="relative h-64 overflow-hidden">
+              {selectedEvent.image_url ? (
+                <img 
+                  src={selectedEvent.image_url} 
+                  alt={selectedEvent.name} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-[#1a48c4]">
+                  <span className="text-white text-3xl font-bold">{selectedEvent.artist}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Sección de detalles */}
+            <div className="filters-body" style={{background: '#ffffff', color: '#101119'}}>
+              {/* Nombre del evento */}
+              <h1 className="font-bold text-[#101119] mb-4" style={{fontSize: '20px'}}>{selectedEvent.name}</h1>
+              
+              {/* Nombre del artista */}
+              <h2 className="text-black font-normal mb-6" style={{fontSize: '14px'}}>{selectedEvent.artist}</h2>
+              
+              {/* Card con fecha/horario y venue */}
+              <div className="bg-[#F5F5F5] rounded-lg p-4 space-y-3 mb-6">
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[#101119]">
+                    {format(new Date(selectedEvent.date), "dd MMM yyyy - HH:mm", { locale: es })}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-[#101119]">{selectedEvent.venue}, {selectedEvent.city}</span>
+                </div>
+              </div>
+              
+              {/* Descripción del evento */}
+              {selectedEvent.description && (
+                <div className="space-y-3 mb-6">
+                  <h3 className="font-bold text-[#101119]" style={{fontSize: '16px'}}>Sobre el evento</h3>
+                  <p className="text-black leading-relaxed" style={{fontSize: '14px'}}>{selectedEvent.description}</p>
+                </div>
+              )}
+              
+              {/* Botón de comprar entradas */}
+              {selectedEvent.ticket_url && (
+                <a
+                  href={selectedEvent.ticket_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 w-full text-white text-center px-4 py-3 rounded-lg font transition block"
+                  style={{background: '#1752F9', textDecoration: 'none'}}
+                  onClick={e => e.stopPropagation()}
+                >
+                  Comprar entradas
+                </a>
+              )}
             </div>
           </div>
         </div>
