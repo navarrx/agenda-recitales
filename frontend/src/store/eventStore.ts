@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { Event, EventFilters, PaginationParams } from '../types';
-import { getEvents, getEvent, getCities } from '../services/api';
+import { getEvents, getEvent, getCities, getGenres } from '../services/api';
 
 interface EventState {
   events: Event[];
   event: Event | null;
   cities: string[];
+  genres: string[];
   filters: EventFilters;
   pagination: PaginationParams;
   loading: boolean;
@@ -16,6 +17,7 @@ interface EventState {
   fetchEvents: () => Promise<void>;
   fetchEvent: (id: number) => Promise<void>;
   fetchCities: () => Promise<void>;
+  fetchGenres: () => Promise<void>;
   setFilters: (filters: Partial<EventFilters>) => void;
   resetFilters: () => void;
   loadMoreEvents: () => Promise<void>;
@@ -38,6 +40,7 @@ export const useEventStore = create<EventState>((set, get) => ({
   events: [],
   event: null,
   cities: [],
+  genres: [],
   filters: DEFAULT_FILTERS,
   pagination: DEFAULT_PAGINATION,
   loading: false,
@@ -86,6 +89,15 @@ export const useEventStore = create<EventState>((set, get) => ({
       set({ cities });
     } catch (error) {
       console.error('Error fetching cities:', error);
+    }
+  },
+
+  fetchGenres: async () => {
+    try {
+      const genres = await getGenres();
+      set({ genres });
+    } catch (error) {
+      console.error('Error fetching genres:', error);
     }
   },
 

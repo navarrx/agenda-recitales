@@ -75,10 +75,10 @@ const HomePage = () => {
                 muted
                 loop
                 playsInline
-                className="absolute w-full h-full max-h-[35vh] sm:max-h-[60vh] object-cover"
+                className="absolute w-full h-full object-cover"
                 style={{ 
                   transform: `scale(1.2) rotate(${useTransform(mouseX, [-1, 1], [-1, 1])}deg)`,
-                  filter: 'blur(8px) brightness(0.7)',
+                  filter: 'blur(3px) brightness(0.7)',
                 }}
               >
                 <source src="/videos/hero-background.mp4" type="video/mp4" />

@@ -24,16 +24,20 @@ const EVENT_TYPES = [
 ];
 
 const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFiltersProps) => {
-  const { cities, fetchCities, filters: globalFilters, resetFilters } = useEventStore();
+  const { filters: globalFilters, resetFilters, genres, fetchGenres } = useEventStore();
   const [filters, setFilters] = useState<FilterTypes>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   
+  // 1. Estado para mostrar/ocultar el dropdown de género
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+  const genreDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    fetchCities();
-  }, [fetchCities]);
+    fetchGenres();
+  }, [fetchGenres]);
 
   // Sincronizar estado local con filtros globales
   useEffect(() => {
@@ -58,6 +62,18 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showTypeDropdown]);
+
+  // 2. Cerrar dropdown de género al hacer click fuera
+  useEffect(() => {
+    if (!showGenreDropdown) return;
+    function handleClick(e: MouseEvent) {
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(e.target as Node)) {
+        setShowGenreDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showGenreDropdown]);
 
   // ToggleGroup handler
   const handleDateTypesChange = (values: string[]) => {
@@ -131,10 +147,10 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
 
   const hasActiveFilters = () => {
     return (
-      filters.city ||
       filters.dateFrom ||
       filters.dateTo ||
       filters.search ||
+      filters.genre ||
       filters.dateTypes?.length
     );
   };
@@ -143,148 +159,203 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
     <div className="mb-6">
       {/* Filtros principales - reorganizados para móviles */}
       <div className="flex flex-col gap-3 w-full">
-        {/* Primera fila: Ciudad y Fecha */}
-        <div className="flex gap-3 w-full">
-          <div className="w-1/2">
-            {/* Ciudad */}
-            <label className="block text-sm font-medium text-white/80 mb-1">Ciudad</label>
+        {/* Primera fila: Filtros y selector de vista */}
+        <div className="flex gap-3 w-full items-end">
+          {/* Contenedor de filtros Tipo, Fecha y Género */}
+          <div className="flex gap-3 items-end">
+            {/* Tipo de evento - dropdown en mobile, ToggleGroup en desktop */}
             <div className="relative">
-              <select
-                className="w-full px-3 py-2 bg-[#101119] border border-white/20 rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white text-sm font-medium flex items-center gap-2 appearance-none pr-8"
-                value={filters.city || ''}
-                onChange={(e) => handleFilterChange('city', e.target.value || undefined)}
-              >
-                <option value="">Todas las ciudades</option>
-                {cities.map((city) => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
-              {/* Flecha de select */}
-              <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
-            </div>
-          </div>
-          <div className="w-1/2">
-            {/* Fecha */}
-            <label className="block text-sm font-medium text-white/80 mb-1">Fecha</label>
-            <DatePicker
-              selected={selectedDate}
-              onChange={handleDateChange}
-              locale={es}
-              dateFormat="dd/MM/yyyy"
-              placeholderText="Seleccionar fecha"
-              minDate={new Date()}
-              className="w-full"
-              customInput={
+              <label className="block text-sm font-medium text-white/80 mb-1">Tipo</label>
+              {/* Mobile: dropdown */}
+              <div className="block md:hidden" ref={typeDropdownRef}>
                 <button
-                  className="w-full px-3 py-2 bg-[#101119] border border-white/20 rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white text-sm font-medium flex items-center justify-between gap-4 text-left hover:border-[#1a48c4] transition-colors"
+                  className="w-[90px] px-2 py-1.5 bg-[#101119] border border-white/20 rounded-md shadow-sm text-white text-xs flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#1a48c4] min-w-0 md:w-[120px] md:px-3 md:py-2 md:text-sm"
+                  onClick={() => setShowTypeDropdown((v) => !v)}
                   type="button"
                 >
-                  <span className={selectedDate ? '' : 'text-white/50'}>
-                    {selectedDate ? selectedDate.toLocaleDateString('es-ES') : 'Seleccionar fecha'}
+                  <span className="truncate text-left flex-1 mr-2 overflow-hidden whitespace-nowrap">
+                    {filters.dateTypes && filters.dateTypes.length > 0
+                      ? EVENT_TYPES.filter(t => filters.dateTypes?.includes(t.value)).map(t => t.label).join(', ')
+                      : 'Todos'}
                   </span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
+                    <path d="M6 9l6 6 6-6" />
                   </svg>
                 </button>
-              }
-            />
-          </div>
-        </div>
-        {/* Segunda fila: Tipo de evento (dropdown en mobile) y selector de vista */}
-        <div className="flex gap-3 w-full items-end">
-          {/* Tipo de evento - dropdown en mobile, ToggleGroup en desktop */}
-          <div className="flex-1 relative">
-            <label className="block text-sm font-medium text-white/80 mb-1">Tipo de evento</label>
-            {/* Mobile: dropdown */}
-            <div className="block md:hidden" ref={typeDropdownRef}>
-              <button
-                className="w-full px-3 py-2 bg-[#101119] border border-white/20 rounded-md shadow-sm text-white text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#1a48c4]"
-                onClick={() => setShowTypeDropdown((v) => !v)}
-                type="button"
-              >
-                <span>
-                  {filters.dateTypes && filters.dateTypes.length > 0
-                    ? EVENT_TYPES.filter(t => filters.dateTypes?.includes(t.value)).map(t => t.label).join(', ')
-                    : 'Todos'}
-                </span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
-              {showTypeDropdown && (
-                <div className="absolute z-20 mt-2 w-full bg-[#101119] border border-white/20 rounded-md shadow-lg py-2 animate-fade-in">
-                  {EVENT_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-left text-white text-sm hover:bg-[#1a48c4]/30 transition-colors ${filters.dateTypes?.includes(type.value) ? 'bg-[#1a48c4]/40' : ''}`}
-                      onClick={() => {
-                        let newTypes = filters.dateTypes ? [...filters.dateTypes] : [];
-                        if (newTypes.includes(type.value)) {
-                          newTypes = newTypes.filter((v) => v !== type.value);
-                        } else {
-                          // Exclusión lógica entre pago y gratis
-                          if ((type.value === 'pago' && newTypes.includes('gratis')) || (type.value === 'gratis' && newTypes.includes('pago'))) {
-                            newTypes = [type.value];
+                {showTypeDropdown && (
+                  <div className="absolute z-20 mt-2 min-w-[110px] bg-[#101119] border border-white/20 rounded-md shadow-lg py-1 animate-fade-in md:min-w-[140px] md:py-2">
+                    {EVENT_TYPES.map((type) => (
+                      <button
+                        key={type.value}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-left text-white text-sm hover:bg-[#1a48c4]/30 transition-colors min-w-0 ${filters.dateTypes?.includes(type.value) ? 'bg-[#1a48c4]/40' : ''}`}
+                        onClick={() => {
+                          let newTypes = filters.dateTypes ? [...filters.dateTypes] : [];
+                          if (newTypes.includes(type.value)) {
+                            newTypes = newTypes.filter((v) => v !== type.value);
                           } else {
-                            newTypes.push(type.value);
+                            // Exclusión lógica entre pago y gratis
+                            if ((type.value === 'pago' && newTypes.includes('gratis')) || (type.value === 'gratis' && newTypes.includes('pago'))) {
+                              newTypes = [type.value];
+                            } else {
+                              newTypes.push(type.value);
+                            }
                           }
-                        }
-                        const newFilters = { ...filters, dateTypes: newTypes.length > 0 ? newTypes : undefined };
-                        setFilters(newFilters);
-                        onFilterChange(newFilters);
+                          const newFilters = { ...filters, dateTypes: newTypes.length > 0 ? newTypes : undefined };
+                          setFilters(newFilters);
+                          onFilterChange(newFilters);
+                        }}
+                        type="button"
+                      >
+                        <div className="flex-shrink-0">{type.icon}</div>
+                        <span className="flex-1 truncate overflow-hidden whitespace-nowrap">{type.label}</span>
+                        {filters.dateTypes?.includes(type.value) && (
+                          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="flex-shrink-0"><path d="M5 13l4 4L19 7" /></svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Desktop: ToggleGroup */}
+              <div className="hidden md:flex flex-wrap items-center gap-2">
+                <ToggleGroup.Root
+                  type="multiple"
+                  value={filters.dateTypes || []}
+                  onValueChange={handleDateTypesChange}
+                  className="flex flex-wrap gap-2"
+                >
+                  {EVENT_TYPES.map((type) => (
+                    <ToggleGroup.Item
+                      key={type.value}
+                      value={type.value}
+                      className={
+                        'flex items-center gap-1 px-2 sm:px-3 h-8 sm:h-10 rounded-lg border border-white/20 text-white/80 text-xs sm:text-sm font-medium transition-all duration-150 ' +
+                        'data-[state=on]:bg-[#1a48c4] data-[state=on]:text-white data-[state=on]:border-[#1a48c4] ' +
+                        'hover:bg-[#1a48c4]/30 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#1a48c4] focus:z-10'
+                      }
+                      aria-label={type.label}
+                    >
+                      {type.icon}
+                      <span className="hidden sm:inline">{type.label}</span>
+                      <span className="sm:hidden">{type.label.charAt(0)}</span>
+                    </ToggleGroup.Item>
+                  ))}
+                </ToggleGroup.Root>
+              </div>
+            </div>
+            {/* Fecha */}
+            <div className="w-[90px] md:w-36">
+              <label className="block text-sm font-medium text-white/80 mb-1">Fecha</label>
+              <DatePicker
+                selected={selectedDate}
+                onChange={handleDateChange}
+                locale={es}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Seleccionar"
+                minDate={new Date()}
+                className="w-full"
+                customInput={
+                  <button
+                    className="w-[90px] px-2 py-1.5 bg-[#101119] border border-white/20 rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white text-xs font-medium flex items-center justify-between gap-2 text-left hover:border-[#1a48c4] transition-colors md:w-full md:px-3 md:py-2 md:text-sm md:gap-4"
+                    type="button"
+                  >
+                    <span className={selectedDate ? '' : 'text-white/50'}>
+                      {selectedDate ? selectedDate.toLocaleDateString('es-ES') : 'Seleccionar'}
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                }
+              />
+            </div>
+            {/* Género - dropdown custom igual al de Tipo */}
+            <div className="w-[90px] relative md:w-36">
+              <label className="block text-sm font-medium text-white/80 mb-1">Género</label>
+              {/* Mobile: dropdown custom */}
+              <div className="block md:hidden" ref={genreDropdownRef}>
+                <button
+                  className="w-[90px] px-2 py-1.5 bg-[#101119] border border-white/20 rounded-md shadow-sm text-white text-xs flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#1a48c4] min-w-0 md:w-[120px] md:px-3 md:py-2 md:text-sm"
+                  onClick={() => setShowGenreDropdown((v) => !v)}
+                  type="button"
+                >
+                  <span className="truncate text-left flex-1 mr-2 overflow-hidden whitespace-nowrap">
+                    {filters.genre ? filters.genre : 'Todos'}
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {showGenreDropdown && (
+                  <div className="absolute z-20 mt-2 min-w-[110px] bg-[#101119] border border-white/20 rounded-md shadow-lg py-1 animate-fade-in md:min-w-[140px] md:py-2">
+                    <button
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-left text-white text-sm hover:bg-[#1a48c4]/30 transition-colors min-w-0 ${!filters.genre ? 'bg-[#1a48c4]/40' : ''}`}
+                      onClick={() => {
+                        setFilters({ ...filters, genre: undefined });
+                        onFilterChange({ ...filters, genre: undefined });
+                        setShowGenreDropdown(false);
                       }}
                       type="button"
                     >
-                      {type.icon}
-                      <span>{type.label}</span>
-                      {filters.dateTypes?.includes(type.value) && (
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+                      <span className="flex-1 truncate overflow-hidden whitespace-nowrap">Todos</span>
+                      {!filters.genre && (
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="flex-shrink-0"><path d="M5 13l4 4L19 7" /></svg>
                       )}
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* Desktop: ToggleGroup */}
-            <div className="hidden md:flex flex-wrap items-center gap-2">
-              <ToggleGroup.Root
-                type="multiple"
-                value={filters.dateTypes || []}
-                onValueChange={handleDateTypesChange}
-                className="flex flex-wrap gap-2"
-              >
-                {EVENT_TYPES.map((type) => (
-                  <ToggleGroup.Item
-                    key={type.value}
-                    value={type.value}
-                    className={
-                      'flex items-center gap-1 px-2 sm:px-3 h-8 sm:h-10 rounded-lg border border-white/20 text-white/80 text-xs sm:text-sm font-medium transition-all duration-150 ' +
-                      'data-[state=on]:bg-[#1a48c4] data-[state=on]:text-white data-[state=on]:border-[#1a48c4] ' +
-                      'hover:bg-[#1a48c4]/30 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#1a48c4] focus:z-10'
-                    }
-                    aria-label={type.label}
+                    {genres.map((genre) => (
+                      <button
+                        key={genre}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-left text-white text-sm hover:bg-[#1a48c4]/30 transition-colors min-w-0 ${filters.genre === genre ? 'bg-[#1a48c4]/40' : ''}`}
+                        onClick={() => {
+                          setFilters({ ...filters, genre });
+                          onFilterChange({ ...filters, genre });
+                          setShowGenreDropdown(false);
+                        }}
+                        type="button"
+                      >
+                        <span className="flex-1 truncate overflow-hidden whitespace-nowrap">{genre}</span>
+                        {filters.genre === genre && (
+                          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="flex-shrink-0"><path d="M5 13l4 4L19 7" /></svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Desktop: select nativo (puedes migrar a custom si quieres máxima coherencia) */}
+              <div className="hidden md:block">
+                <div className="relative">
+                  <select
+                    className="w-36 px-3 py-2 bg-[#101119] border border-white/20 rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white text-sm font-medium flex items-center gap-2 appearance-none pr-8"
+                    value={filters.genre || ''}
+                    onChange={(e) => handleFilterChange('genre', e.target.value || undefined)}
                   >
-                    {type.icon}
-                    <span className="hidden sm:inline">{type.label}</span>
-                    <span className="sm:hidden">{type.label.charAt(0)}</span>
-                  </ToggleGroup.Item>
-                ))}
-              </ToggleGroup.Root>
-              {hasActiveFilters() && (
-                <button
-                  onClick={handleClearFilters}
-                  className="flex items-center gap-1 text-white/60 hover:text-red-400 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded transition-colors duration-200 whitespace-nowrap"
-                  style={{ minHeight: '32px' }}
-                >
-                  <X className="w-3 h-3 sm:w-4 sm:h-4" /> 
-                  <span className="hidden sm:inline">Limpiar filtros</span>
-                  <span className="sm:hidden">Limpiar</span>
-                </button>
-              )}
+                    <option value="">Todos</option>
+                    {genres.map((genre) => (
+                      <option key={genre} value={genre}>{genre}</option>
+                    ))}
+                  </select>
+                  {/* Flecha de select */}
+                  <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
+                </div>
+              </div>
             </div>
+            {/* Limpiar filtros (desktop) */}
+            {hasActiveFilters() && (
+              <button
+                onClick={handleClearFilters}
+                className="hidden md:flex items-center gap-1 text-white/60 hover:text-red-400 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded transition-colors duration-200 whitespace-nowrap border border-transparent hover:border-red-400 bg-transparent h-10"
+                type="button"
+                style={{ alignSelf: 'flex-end' }}
+              >
+                <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Limpiar filtros</span>
+                <span className="sm:hidden">Limpiar</span>
+              </button>
+            )}
           </div>
-          {/* Selector de vista */}
-          <div className="flex flex-col justify-end h-full gap-2 ml-2 pb-[2px]">
+          {/* Selector de vista (solo desktop) */}
+          <div className="hidden md:flex flex-col justify-end h-full gap-2 pb-[2px] ml-auto">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onViewModeChange('card')}
@@ -307,23 +378,44 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
             </div>
           </div>
         </div>
-        {/* Tercera fila: Buscador */}
-        <div className="w-full mt-1">
+        {/* Tercera fila: Buscador + Selector de vista (mobile) */}
+        <div className="w-full mt-1 flex items-center">
           <input
             type="text"
-            placeholder="Buscar por nombre, artista o descripción"
+            placeholder="Buscar por nombre, artista, ciudad o venue"
             className={`w-full px-3 py-2 bg-[#101119] border rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white placeholder-white/50 text-sm ${searchError ? 'border-yellow-500' : 'border-white/20'}`}
             value={filters.search || ''}
             onChange={(e) => handleFilterChange('search', e.target.value || undefined)}
             maxLength={100}
           />
+          {/* Selector de vista (solo mobile) */}
+          <div className="flex md:hidden items-center ml-2 gap-1">
+            <button
+              onClick={() => onViewModeChange('card')}
+              className={`p-1.5 rounded transition-colors ${viewMode === 'card' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
+              aria-label="Vista en tarjetas"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => onViewModeChange('list')}
+              className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
+              aria-label="Vista en lista"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
           {searchError && (
             <p className="text-yellow-400 text-xs mt-1 flex items-center gap-1">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              {searchError}
-            </p>
+            </svg>
+            {searchError}
+          </p>
           )}
         </div>
         {/* Botón Limpiar filtros solo en mobile */}
