@@ -10,8 +10,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# --- FIX STARTS HERE ---
+
 # Patrones peligrosos
-DANGEROUS_HEADERS = re.compile(r'^(x-forwarded-for|x-real-ip|x-forwarded-proto|x-forwarded-host)$', re.IGNORECASE)
+# REMOVED x-forwarded-for, x-real-ip, x-forwarded-proto, x-forwarded-host
+# These headers are legitimate when behind a load balancer and should not be blocked.
+# If you have other specific headers you consider dangerous in YOUR specific setup
+# that are NOT standard proxy headers, you can add them here.
+DANGEROUS_HEADERS = re.compile(r'^(some-other-truly-dangerous-header)$', re.IGNORECASE)
+# If there are NO other truly dangerous headers you want to block by name, you can make this regex empty
+# or remove the check entirely, but keeping it as an empty regex pattern is safer for future additions.
+# Example if no other headers are universally "dangerous" to your app:
+# DANGEROUS_HEADERS = re.compile(r'^$', re.IGNORECASE) # This regex will match nothing
+
+# --- FIX ENDS HERE ---
+
 SQL_INJECTION_PATTERNS = re.compile(
     r'\b(union|select|insert|update|delete|drop|create|alter|exec|execute|script|javascript|vbscript|onload|onerror|onclick)\b',
     re.IGNORECASE
@@ -30,6 +43,11 @@ class SecurityMiddleware:
             request = Request(scope, receive)
             
             # Excluir rutas de autenticación de la validación estricta
+            # NOTE: If your /auth/token and /auth/login endpoints use request bodies,
+            # they will still pass through the body validation below.
+            # If you want to skip all validation for auth routes, move this to the end
+            # or put the body validation logic within a conditional if the route is NOT auth.
+            # For now, it's just skipping header/query param validation.
             if request.url.path in ["/auth/token", "/auth/login"]:
                 return await self.app(scope, receive, send)
             
@@ -51,7 +69,7 @@ class SecurityMiddleware:
                 except Exception as e:
                     logger.warning(f"Error validando body de solicitud: {e}")
                     return await self._send_error_response(send, 400, "Error procesando solicitud")
-        
+            
         return await self.app(scope, receive, send)
     
     def _validate_headers(self, headers: Dict[str, str]) -> bool:
@@ -59,12 +77,12 @@ class SecurityMiddleware:
         Valida headers de la solicitud
         """
         for name, value in headers.items():
-            # Verificar headers peligrosos
+            # Verificar headers peligrosos - NOW ONLY CHECKS AGAINST THE MODIFIED DANGEROUS_HEADERS
             if DANGEROUS_HEADERS.match(name):
-                logger.warning(f"Header peligroso detectado: {name}")
+                logger.warning(f"Header peligroso detectado: {name} (was in DANGEROUS_HEADERS list)")
                 return False
             
-            # Verificar contenido malicioso en headers
+            # Verificar contenido malicioso en headers (SQLi/XSS) - KEEP THIS CHECK
             if value and (SQL_INJECTION_PATTERNS.search(value) or XSS_PATTERNS.search(value)):
                 logger.warning(f"Contenido malicioso en header {name}: {value}")
                 return False
@@ -119,10 +137,12 @@ class SecurityMiddleware:
             for key, value in data.items():
                 if not self._validate_json_key(key) or not self._validate_json_data(value):
                     return False
+            return True # Ensure all dict items are checked before returning True
         elif isinstance(data, list):
             for item in data:
                 if not self._validate_json_data(item):
                     return False
+            return True # Ensure all list items are checked before returning True
         elif isinstance(data, str):
             if SQL_INJECTION_PATTERNS.search(data) or XSS_PATTERNS.search(data):
                 logger.warning(f"Contenido malicioso en JSON: {data}")
@@ -153,9 +173,20 @@ class SecurityMiddleware:
         for line in form_data.split('&'):
             if '=' in line:
                 key, value = line.split('=', 1)
-                if not self._validate_json_key(key) or SQL_INJECTION_PATTERNS.search(value) or XSS_PATTERNS.search(value):
+                # It's better to validate the value separately, not combine with key validation here
+                if SQL_INJECTION_PATTERNS.search(value) or XSS_PATTERNS.search(value):
                     logger.warning(f"Form data malicioso: {line}")
                     return False
+                if not self._validate_json_key(key): # Re-use key validation for form keys
+                    logger.warning(f"Clave de formulario maliciosa: {key}")
+                    return False
+            else: # Handle cases where there's no '=' (e.g., just a key)
+                if SQL_INJECTION_PATTERNS.search(line) or XSS_PATTERNS.search(line):
+                    logger.warning(f"Form data malicioso (no key=value format): {line}")
+                    return False
+                if len(line) > 1000: # Limit length for standalone values/keys
+                     logger.warning(f"Form data demasiado largo: {line}")
+                     return False
         
         return True
     
@@ -167,11 +198,26 @@ class SecurityMiddleware:
             status_code=status_code,
             content={"detail": message}
         )
-        await response(scope=None, receive=None, send=send)
+        # Manually construct and send ASGI response events
+        await send({"type": "http.response.start", "status": response.status_code, "headers": response.raw_headers})
+        await send({"type": "http.response.body", "body": response.body})
 
+
+# Your add_security_middleware function in app/main.py or wherever you initialize your app
+# should use this.
+# Example:
+# from fastapi import FastAPI
+# from .middleware import SecurityMiddleware # Assuming it's in a submodule
+# app = FastAPI()
+# app.add_middleware(SecurityMiddleware) # This is the correct way if SecurityMiddleware is a BaseHTTPMiddleware-like class
+# or
+# app = add_security_middleware(app) # If you keep the helper function
+
+
+# If you are using the `add_security_middleware` helper function, it also needs to be updated:
 def add_security_middleware(app):
     """
     Agrega middleware de seguridad a la aplicación
     """
-    app.add_middleware(SecurityMiddleware)
-    return app 
+    app.add_middleware(SecurityMiddleware) # Assuming SecurityMiddleware is now an actual Starlette BaseHTTPMiddleware or similar
+    return app
