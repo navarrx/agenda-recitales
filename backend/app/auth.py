@@ -55,11 +55,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
-async def get_current_admin_user(db: Session = Depends(get_db)):
+async def get_current_admin_user(user: models.User = Depends(get_current_user)):
     import logging
     logger = logging.getLogger("app.auth")
     logger.info("[get_current_admin_user] Called.")
-    user = await get_current_user(db)
     logger.info(f"[get_current_admin_user] User: {getattr(user, 'username', None)}")
     if not user or not user.is_admin:
         logger.warning("[get_current_admin_user] Not admin or not authenticated.")
