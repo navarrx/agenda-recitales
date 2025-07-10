@@ -78,6 +78,15 @@ async def check_cors_headers(request: Request, call_next):
     start_time = time.time()
     try:
         logger.info("Antes de call_next(request)")
+        # --- PATCH: Read and re-inject body for POST/PUT/PATCH ---
+        if request.method in ("POST", "PUT", "PATCH"):
+            body = await request.body()
+            # (Optional) Log body size or content for debugging
+            logger.info(f"[PATCH] Middleware - Body read, reinjecting for downstream. Size: {len(body)} bytes")
+            async def receive():
+                return {"type": "http.request", "body": body}
+            request._receive = receive
+        # --- END PATCH ---
         response = await call_next(request)
         logger.info("Después de call_next(request)")
     except Exception as e:
@@ -89,7 +98,6 @@ async def check_cors_headers(request: Request, call_next):
     # Loguear los headers para depuración
     logger.info(f"Response status: {response.status_code}")
     logger.info(f"Response CORS headers: {dict(response.headers)}")
-    
     return response
 
 # Include routers
