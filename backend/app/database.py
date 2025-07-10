@@ -64,17 +64,17 @@ Base = declarative_base()
 # Dependency to get DB session
 def get_db():
     import logging
-    logger = logging.getLogger(__name__)
-    logger.info("get_db - Iniciando conexión a base de datos...")
-    
-    db = SessionLocal()
-    logger.info("get_db - Sesión de base de datos creada")
-    
+    logger = logging.getLogger("app.database")
+    logger.info("[get_db] Creating DB session...")
+    db = None
     try:
-        logger.info("get_db - Entregando sesión...")
+        db = SessionLocal()
+        logger.info("[get_db] DB session created.")
         yield db
-        logger.info("get_db - Sesión entregada correctamente")
+    except Exception as e:
+        logger.error(f"[get_db] Exception: {e}", exc_info=True)
+        raise
     finally:
-        logger.info("get_db - Cerrando sesión...")
-        db.close() 
-        logger.info("get_db - Sesión cerrada") 
+        if db:
+            db.close()
+            logger.info("[get_db] DB session closed.")
