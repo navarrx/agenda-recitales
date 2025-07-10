@@ -74,9 +74,18 @@ async def check_cors_headers(request: Request, call_next):
     logger.info(f"Recibida solicitud a: {request.url.path}")
     logger.info(f"Método: {request.method}")
     logger.info(f"Origin: {request.headers.get('origin', 'No origin header')}")
-    
-    response = await call_next(request)
-    
+    import time
+    start_time = time.time()
+    try:
+        logger.info("Antes de call_next(request)")
+        response = await call_next(request)
+        logger.info("Después de call_next(request)")
+    except Exception as e:
+        logger.error(f"Excepción en call_next: {e}", exc_info=True)
+        raise
+    finally:
+        elapsed = time.time() - start_time
+        logger.info(f"Tiempo transcurrido en call_next: {elapsed:.2f} segundos")
     # Loguear los headers para depuración
     logger.info(f"Response status: {response.status_code}")
     logger.info(f"Response CORS headers: {dict(response.headers)}")
