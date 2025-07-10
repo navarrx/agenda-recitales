@@ -78,6 +78,79 @@ async def upload_image(
             detail="Error interno del servidor al subir la imagen"
         )
 
+@router.post("/pending-image")
+async def upload_pending_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Sube una imagen pendiente al bucket de S3 (público, sin autenticación)
+    
+    Args:
+        file: Archivo de imagen a subir
+        db: Sesión de base de datos
+        
+    Returns:
+        URL de la imagen pendiente subida
+    """
+    logger.info(f"POST /upload/pending-image - Iniciando procesamiento")
+    try:
+        logger.info(f"Archivo recibido: {file.filename}, tipo: {file.content_type}")
+        
+        # Validar que el archivo sea una imagen
+        if not file.content_type or not file.content_type.startswith('image/'):
+            logger.error(f"Tipo de archivo inválido: {file.content_type}")
+            raise HTTPException(
+                status_code=400, 
+                detail="El archivo debe ser una imagen (JPEG, PNG, GIF, etc.)"
+            )
+        
+        # Validar tamaño del archivo (máximo 5MB para usuarios públicos)
+        max_size = 5 * 1024 * 1024  # 5MB
+        logger.info("Leyendo contenido del archivo...")
+        file_content = await file.read()
+        logger.info(f"Archivo leído, tamaño: {len(file_content)} bytes")
+        
+        if len(file_content) > max_size:
+            logger.error(f"Archivo demasiado grande: {len(file_content)} bytes")
+            raise HTTPException(
+                status_code=400,
+                detail="El archivo es demasiado grande. Máximo 5MB permitido."
+            )
+        
+        # Subir imagen pendiente a S3
+        logger.info("Subiendo imagen a S3...")
+        image_url = s3_service.upload_pending_image(
+            file_content=file_content,
+            file_name=file.filename or "pending_image.jpg",
+            content_type=file.content_type
+        )
+        
+        if not image_url:
+            logger.error("Error al subir imagen a S3")
+            raise HTTPException(
+                status_code=500,
+                detail="Error al subir la imagen. Intente nuevamente."
+            )
+        
+        logger.info(f"Imagen subida exitosamente: {image_url}")
+        
+        return {
+            "success": True,
+            "image_url": image_url,
+            "message": "Imagen pendiente subida exitosamente"
+        }
+        
+    except HTTPException:
+        logger.error("HTTPException en upload_pending_image")
+        raise
+    except Exception as e:
+        logger.error(f"Error inesperado en upload_pending_image: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Error interno del servidor al subir la imagen"
+        )
+
 @router.delete("/image")
 async def delete_image(
     image_url: str,

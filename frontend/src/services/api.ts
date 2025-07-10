@@ -34,7 +34,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor para manejar errores
+// Interceptor para manejar errores de autenticación
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -44,6 +44,16 @@ apiClient.interceptors.response.use(
       data: error.response?.data,
       message: error.message
     });
+
+    // Si el error es de autenticación (401), limpiar el token y redirigir al login
+    if (error.response?.status === 401) {
+      localStorage.removeItem('adminToken');
+      // Redirigir al login solo si no estamos ya en la página de login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -123,5 +133,18 @@ export const getEventRequests = async (status?: string): Promise<EventRequest[]>
 
 export const updateEventRequestStatus = async (id: number, status: string): Promise<EventRequest> => {
   const response = await apiClient.put(`/event-requests/${id}/status`, { status });
+  return response.data;
+}; 
+
+export const uploadPendingImage = async (file: File): Promise<{ success: boolean; image_url: string; message: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await apiClient.post('/upload/pending-image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
   return response.data;
 }; 

@@ -49,6 +49,7 @@ class EventRequest(Base):
     city = Column(String)
     ticket_url = Column(String)
     message = Column(Text)
+    image_url = Column(String, nullable=True)
     status = Column(String, default="pending")
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now()) 

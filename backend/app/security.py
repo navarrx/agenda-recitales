@@ -9,7 +9,7 @@ from datetime import datetime, date
 # Patrones peligrosos
 DANGEROUS_CHARS = re.compile(r'[<>"\']')
 SQL_INJECTION_PATTERNS = re.compile(
-    r'\b(union|select|insert|update|delete|drop|create|alter|exec|execute|script|javascript|vbscript|onload|onerror|onclick)\b',
+    r'\b(union\s+select|select\s+union|insert\s+into|update\s+set|delete\s+from|drop\s+table|create\s+table|alter\s+table|exec\s+sp_|execute\s+sp_|javascript:|vbscript:|onload\s*=|onerror\s*=|onclick\s*=)\b',
     re.IGNORECASE
 )
 XSS_PATTERNS = re.compile(
@@ -114,14 +114,14 @@ def validate_url(url: str) -> bool:
     if not url:
         return False
     
-    # Patrón básico para URL
+    # Patrón más flexible para URL que incluye S3 y otros servicios
     pattern = re.compile(
         r'^https?://'  # http:// o https://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # dominio
         r'localhost|'  # localhost
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # IP
         r'(?::\d+)?'  # puerto opcional
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        r'(?:/?|[/?]\S*)$', re.IGNORECASE)  # Cambiado de \S+ a \S* para ser más flexible
     
     return bool(pattern.match(url))
 
@@ -153,6 +153,9 @@ def sanitize_event_request_data(data: dict) -> dict:
     """
     Sanitiza todos los campos de una solicitud de evento
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     sanitized = {}
     
     # Sanitizar campos de texto
@@ -180,10 +183,25 @@ def sanitize_event_request_data(data: dict) -> dict:
     if 'message' in data:
         sanitized['message'] = sanitize_text(data['message'], 1000)
     
+    if 'image_url' in data:
+        logger.info(f"Sanitizando image_url: {data['image_url']}")
+        if data['image_url']:
+            sanitized['image_url'] = sanitize_url(data['image_url'])
+            logger.info(f"image_url sanitizada: {sanitized['image_url']}")
+        else:
+            sanitized['image_url'] = None
+            logger.info("image_url es None")
+    
     # La fecha no necesita sanitización
     if 'date' in data:
         sanitized['date'] = data['date']
     
+    # La hora no necesita sanitización, solo validación de formato
+    if 'time' in data:
+        sanitized['time'] = data['time']
+        logger.info(f"Campo time incluido: {data['time']}")
+    
+    logger.info(f"Datos sanitizados completos: {sanitized}")
     return sanitized
 
 def validate_event_request_data(data: dict) -> list:
@@ -191,6 +209,9 @@ def validate_event_request_data(data: dict) -> list:
     Valida todos los campos de una solicitud de evento
     Retorna lista de errores
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     errors = []
     
     # Validar nombre
@@ -263,4 +284,14 @@ def validate_event_request_data(data: dict) -> list:
         if not validate_length(data['message'], 1000):
             errors.append('El mensaje no puede exceder 1000 caracteres')
     
+    # Validar URL de imagen
+    if 'image_url' in data and data['image_url']:
+        logger.info(f"Validando image_url: {data['image_url']}")
+        if not validate_url(data['image_url']):
+            logger.error(f"URL de imagen inválida: {data['image_url']}")
+            errors.append('La URL de imagen no es válida')
+        else:
+            logger.info("URL de imagen válida")
+    
+    logger.info(f"Errores de validación encontrados: {errors}")
     return errors 

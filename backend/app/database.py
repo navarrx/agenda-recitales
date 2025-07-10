@@ -63,8 +63,18 @@ Base = declarative_base()
 
 # Dependency to get DB session
 def get_db():
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("get_db - Iniciando conexión a base de datos...")
+    
     db = SessionLocal()
+    logger.info("get_db - Sesión de base de datos creada")
+    
     try:
+        logger.info("get_db - Entregando sesión...")
         yield db
+        logger.info("get_db - Sesión entregada correctamente")
     finally:
+        logger.info("get_db - Cerrando sesión...")
         db.close() 
+        logger.info("get_db - Sesión cerrada") 

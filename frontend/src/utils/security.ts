@@ -97,6 +97,14 @@ export function validateFutureDate(dateString: string): boolean {
 }
 
 /**
+ * Valida formato de hora (HH:MM)
+ */
+export function validateTime(timeString: string): boolean {
+  const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  return timeRegex.test(timeString);
+}
+
+/**
  * Sanitiza y valida todos los campos de una solicitud de evento
  */
 export function sanitizeEventRequest(data: {
@@ -105,6 +113,7 @@ export function sanitizeEventRequest(data: {
   eventName: string;
   artist: string;
   date: string;
+  time?: string;
   venue: string;
   city: string;
   ticketUrl: string;
@@ -122,6 +131,7 @@ export function sanitizeEventRequest(data: {
     eventName: sanitizeText(data.eventName),
     artist: sanitizeText(data.artist),
     date: data.date, // La fecha no necesita sanitización
+    time: data.time, // La hora no necesita sanitización
     venue: sanitizeText(data.venue),
     city: sanitizeText(data.city),
     ticketUrl: sanitizeUrl(data.ticketUrl),
@@ -161,6 +171,10 @@ export function sanitizeEventRequest(data: {
     errors.push('La fecha es requerida');
   } else if (!validateFutureDate(sanitized.date)) {
     errors.push('La fecha debe ser futura');
+  }
+  
+  if (sanitized.time && !validateTime(sanitized.time)) {
+    errors.push('El formato de hora debe ser HH:MM (ej: 20:30)');
   }
   
   if (!sanitized.venue || sanitized.venue.length < 2) {

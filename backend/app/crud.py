@@ -141,10 +141,38 @@ def get_nearby_events(
     }
 
 def create_event_request(db: Session, event_request: schemas.EventRequestCreate):
-    db_request = models.EventRequest(**event_request.dict())
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info("crud.create_event_request - Iniciando creación de solicitud...")
+    
+    # Combinar fecha y hora en un solo campo DateTime
+    event_data = event_request.dict()
+    date_str = event_data.pop('date')
+    time_str = event_data.pop('time', None)
+    
+    # Crear datetime combinando fecha y hora
+    if time_str:
+        # Si hay hora, combinar fecha y hora
+        datetime_str = f"{date_str} {time_str}:00"
+        combined_datetime = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
+        logger.info(f"crud.create_event_request - Combinando fecha y hora: {combined_datetime}")
+    else:
+        # Si no hay hora, usar solo la fecha con hora 00:00:00
+        combined_datetime = datetime.strptime(date_str, '%Y-%m-%d')
+        logger.info(f"crud.create_event_request - Solo fecha (sin hora): {combined_datetime}")
+    
+    # Crear el objeto EventRequest con la fecha combinada
+    db_request = models.EventRequest(
+        **event_data,
+        date=combined_datetime
+    )
+    
     db.add(db_request)
     db.commit()
     db.refresh(db_request)
+    
+    logger.info(f"crud.create_event_request - Solicitud creada con ID: {db_request.id}")
     return db_request
 
 def get_event_requests(db: Session, skip: int = 0, limit: int = 100, status: Optional[str] = None):

@@ -26,7 +26,7 @@ DANGEROUS_HEADERS = re.compile(r'^(some-other-truly-dangerous-header)$', re.IGNO
 # --- FIX ENDS HERE ---
 
 SQL_INJECTION_PATTERNS = re.compile(
-    r'\b(union|select|insert|update|delete|drop|create|alter|exec|execute|script|javascript|vbscript|onload|onerror|onclick)\b',
+    r'\b(union\s+select|select\s+union|insert\s+into|update\s+set|delete\s+from|drop\s+table|create\s+table|alter\s+table|exec\s+sp_|execute\s+sp_|javascript:|vbscript:|onload\s*=|onerror\s*=|onclick\s*=)\b',
     re.IGNORECASE
 )
 XSS_PATTERNS = re.compile(
@@ -42,34 +42,45 @@ class SecurityMiddleware:
         if scope["type"] == "http":
             request = Request(scope, receive)
             
-            # Excluir rutas de autenticación de la validación estricta
-            # NOTE: If your /auth/token and /auth/login endpoints use request bodies,
-            # they will still pass through the body validation below.
-            # If you want to skip all validation for auth routes, move this to the end
-            # or put the body validation logic within a conditional if the route is NOT auth.
-            # For now, it's just skipping header/query param validation.
-            if request.url.path in ["/auth/token", "/auth/login"]:
+            logger.info(f"Middleware - Procesando solicitud: {request.method} {request.url.path}")
+            
+            # Excluir rutas de autenticación, upload y event_requests de la validación estricta
+            if (request.url.path in ["/auth/token", "/auth/login"] or 
+                request.url.path.startswith("/upload/") or
+                request.url.path.startswith("/event-requests/")):
+                logger.info(f"Middleware - Ruta excluida de validación: {request.url.path}")
                 return await self.app(scope, receive, send)
             
             # Validar headers
+            logger.info("Middleware - Validando headers...")
             if not self._validate_headers(request.headers):
+                logger.error("Middleware - Headers inválidos detectados")
                 return await self._send_error_response(send, 400, "Headers inválidos")
             
             # Validar query parameters
+            logger.info("Middleware - Validando query parameters...")
             if not self._validate_query_params(request.query_params):
+                logger.error("Middleware - Query parameters inválidos detectados")
                 return await self._send_error_response(send, 400, "Parámetros de consulta inválidos")
             
             # Para solicitudes POST/PUT, validar body
             if request.method in ["POST", "PUT", "PATCH"]:
+                logger.info(f"Middleware - Validando body para {request.method}...")
                 try:
                     body = await request.body()
                     if body:
+                        logger.info(f"Middleware - Body recibido, tamaño: {len(body)} bytes")
                         if not self._validate_request_body(body, request.headers.get("content-type", "")):
+                            logger.error("Middleware - Body inválido detectado")
                             return await self._send_error_response(send, 400, "Contenido de solicitud inválido")
+                        logger.info("Middleware - Body validado correctamente")
+                    else:
+                        logger.info("Middleware - Body vacío")
                 except Exception as e:
-                    logger.warning(f"Error validando body de solicitud: {e}")
+                    logger.error(f"Middleware - Error validando body de solicitud: {e}")
                     return await self._send_error_response(send, 400, "Error procesando solicitud")
             
+            logger.info("Middleware - Validación completada, pasando a la aplicación")
         return await self.app(scope, receive, send)
     
     def _validate_headers(self, headers: Dict[str, str]) -> bool:
@@ -112,10 +123,22 @@ class SecurityMiddleware:
         Valida el cuerpo de la solicitud
         """
         try:
+            # Para multipart/form-data, no intentar decodificar como texto
+            if "multipart/form-data" in content_type:
+                # Para archivos, solo verificar que no sea demasiado grande
+                if len(body) > 10 * 1024 * 1024:  # 10MB límite general
+                    logger.warning("Body demasiado grande para multipart/form-data")
+                    return False
+                return True
+            
             if "application/json" in content_type:
                 # Validar JSON
+                logger.info("Middleware - Validando JSON...")
                 data = json.loads(body.decode('utf-8'))
-                return self._validate_json_data(data)
+                logger.info(f"Middleware - JSON decodificado: {data}")
+                result = self._validate_json_data(data)
+                logger.info(f"Middleware - Validación JSON resultado: {result}")
+                return result
             elif "application/x-www-form-urlencoded" in content_type:
                 # Validar form data
                 form_data = body.decode('utf-8')
@@ -126,7 +149,7 @@ class SecurityMiddleware:
                 return not (SQL_INJECTION_PATTERNS.search(body_str) or XSS_PATTERNS.search(body_str))
         
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            logger.warning(f"Error decodificando body: {e}")
+            logger.error(f"Middleware - Error decodificando body: {e}")
             return False
     
     def _validate_json_data(self, data: Any) -> bool:
@@ -134,22 +157,31 @@ class SecurityMiddleware:
         Valida datos JSON recursivamente
         """
         if isinstance(data, dict):
+            logger.info(f"Middleware - Validando diccionario JSON con {len(data)} campos")
             for key, value in data.items():
+                logger.info(f"Middleware - Validando campo: {key}")
                 if not self._validate_json_key(key) or not self._validate_json_data(value):
+                    logger.error(f"Middleware - Campo JSON inválido: {key}")
                     return False
+            logger.info("Middleware - Diccionario JSON válido")
             return True # Ensure all dict items are checked before returning True
         elif isinstance(data, list):
+            logger.info(f"Middleware - Validando lista JSON con {len(data)} elementos")
             for item in data:
                 if not self._validate_json_data(item):
+                    logger.error("Middleware - Elemento de lista JSON inválido")
                     return False
+            logger.info("Middleware - Lista JSON válida")
             return True # Ensure all list items are checked before returning True
         elif isinstance(data, str):
+            logger.info(f"Middleware - Validando string JSON: {data[:50]}...")
             if SQL_INJECTION_PATTERNS.search(data) or XSS_PATTERNS.search(data):
-                logger.warning(f"Contenido malicioso en JSON: {data}")
+                logger.error(f"Middleware - Contenido malicioso en JSON: {data}")
                 return False
             if len(data) > 10000:  # Límite de 10KB por campo
-                logger.warning("Campo JSON demasiado largo")
+                logger.error("Middleware - Campo JSON demasiado largo")
                 return False
+            logger.info("Middleware - String JSON válido")
         
         return True
     

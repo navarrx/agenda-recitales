@@ -34,9 +34,6 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Agregar middleware de seguridad
-add_security_middleware(app)
-
 # Obtener ALLOWED_ORIGINS de variables de entorno o usar valor por defecto
 ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv(
     "ALLOWED_ORIGINS",
@@ -57,16 +54,19 @@ ALLOWED_ORIGINS.extend(["http://localhost:3000", "http://localhost:5173", "http:
 logger.info(f"CORS origins configurados: {ALLOWED_ORIGINS}")
 logger.info(f"PORT configurado en la variable de entorno: {os.getenv('PORT', 'No definido')}")
 
-# Configure CORS
+# Configure CORS PRIMERO (antes que cualquier otro middleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,  # Solo permitir orígenes específicos
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=86400,  # Cache preflight requests for 24 hours
 )
+
+# Agregar middleware de seguridad DESPUÉS del CORS
+add_security_middleware(app)
 
 # Middleware para verificar que los headers CORS se estén aplicando
 @app.middleware("http")
@@ -81,17 +81,6 @@ async def check_cors_headers(request: Request, call_next):
     logger.info(f"Response status: {response.status_code}")
     logger.info(f"Response CORS headers: {dict(response.headers)}")
     
-    # Si no hay headers CORS y existe un Origin, añadirlos manualmente
-    if "access-control-allow-origin" not in response.headers and request.headers.get("origin"):
-        origin = request.headers.get("origin")
-        logger.info(f"Añadiendo manualmente headers CORS para origen: {origin}")
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        # Permitir embedding en cualquier sitio
-        response.headers["Content-Security-Policy"] = "frame-ancestors *"
-    
     return response
 
 # Include routers
@@ -104,7 +93,7 @@ app.include_router(upload.router)
 @app.get("/events")
 def read_events_direct(request: Request):
     """Endpoint directo para /events que redirige al router"""
-    logger.info(f"GET /events request received directamente en main.py")
+    logger.info(f"GET /events request received directly in main.py")
     logger.info(f"Redirigiendo a router de events...")
     # Esta función debe redirigir a la implementación en el enrutador
     from .routers.events import read_events_root
@@ -141,6 +130,7 @@ def test_events_endpoint():
     """Endpoint para verificar que las rutas GET funcionan correctamente"""
     return {"message": "Events test endpoint is working"}
 
+# Endpoint para verificar CORS
 @app.get("/cors-test")
 def test_cors(request: Request):
     """Endpoint para probar que los headers CORS se están aplicando correctamente"""
@@ -152,22 +142,6 @@ def test_cors(request: Request):
         "allowed_origins": ALLOWED_ORIGINS,
         "port": os.getenv("PORT", "No definido")
     }
-
-# Endpoint para verificar CORS
-@app.options("/{rest_of_path:path}")
-async def options_route(request: Request):
-    origin = request.headers.get("origin", "*")
-    logger.info(f"Options request from origin: {origin}")
-    
-    return JSONResponse(
-        content={"message": "CORS preflight response"},
-        headers={
-            "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Credentials": "true",
-        }
-    )
 
 # Definir este archivo como app principal para Railway
 app_instance = app

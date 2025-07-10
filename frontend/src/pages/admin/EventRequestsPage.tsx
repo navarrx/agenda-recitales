@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { getEventRequests, updateEventRequestStatus } from '../../services/api';
 import { EventRequest } from '../../types';
 import Layout from '../../components/layout/Layout';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
+import EventRequestDetailModal from '../../components/modals/EventRequestDetailModal';
 
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
@@ -20,6 +21,8 @@ const EventRequestsPage = () => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'discarded'>('all');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [newStatus, setNewStatus] = useState<'pending' | 'accepted' | 'discarded' | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<EventRequest | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -44,6 +47,10 @@ const EventRequestsPage = () => {
     try {
       await updateEventRequestStatus(id, status);
       setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+      // Actualizar también la solicitud seleccionada si está abierta
+      if (selectedRequest && selectedRequest.id === id) {
+        setSelectedRequest({ ...selectedRequest, status });
+      }
     } catch (err) {
       alert('Error al actualizar el estado.');
     } finally {
@@ -65,6 +72,49 @@ const EventRequestsPage = () => {
   const handleEditCancel = () => {
     setEditingId(null);
     setNewStatus(null);
+  };
+
+  const handleRowClick = (request: EventRequest) => {
+    setSelectedRequest(request);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedRequest(null);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
+  const formatTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) {
+        return '-';
+      }
+      
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      
+      // Si la hora es 00:00, significa que no se especificó hora
+      if (hours === 0 && minutes === 0) {
+        return 'Sin hora';
+      }
+      
+      return date.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return '-';
+    }
   };
 
   return (
@@ -121,15 +171,12 @@ const EventRequestsPage = () => {
             <table className="min-w-full divide-y divide-white/10">
               <thead className="bg-[#101119]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Nombre</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Evento</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Artista</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Fecha</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Hora</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Lugar</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Ciudad</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Link</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Mensaje</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Solicitante</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Estado</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Acciones</th>
                 </tr>
@@ -137,28 +184,36 @@ const EventRequestsPage = () => {
               <tbody className="bg-[#101119] divide-y divide-white/10">
                 {requests.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-10 text-center text-white/60 text-lg">
+                    <td colSpan={8} className="py-10 text-center text-white/60 text-lg">
                       No hay solicitudes para mostrar.
                     </td>
                   </tr>
                 ) : (
                   requests.map((req) => (
-                    <tr key={req.id} className="hover:bg-white/5 transition-colors duration-200">
-                      <td className="px-4 py-2 text-white">{req.name}</td>
-                      <td className="px-4 py-2 text-white/80">{req.email}</td>
-                      <td className="px-4 py-2 text-white">{req.event_name}</td>
-                      <td className="px-4 py-2 text-white/80">{req.artist}</td>
-                      <td className="px-4 py-2 text-white/80">{new Date(req.date).toLocaleDateString()}</td>
-                      <td className="px-4 py-2 text-white/80">{req.venue}</td>
-                      <td className="px-4 py-2 text-white/80">{req.city}</td>
-                      <td className="px-4 py-2 text-blue-400 underline"><a href={req.ticket_url} target="_blank" rel="noopener noreferrer">Ver</a></td>
-                      <td className="px-4 py-2 text-white/80 max-w-xs truncate" title={req.message}>{req.message}</td>
-                      <td className="px-4 py-2">
+                    <tr 
+                      key={req.id} 
+                      className="hover:bg-white/5 transition-colors duration-200 cursor-pointer"
+                      onClick={() => handleRowClick(req)}
+                    >
+                      <td className="px-4 py-3 text-white font-medium">{req.event_name}</td>
+                      <td className="px-4 py-3 text-white/80">{req.artist}</td>
+                      <td className="px-4 py-3 text-white/80">{formatDate(req.date)}</td>
+                      <td className="px-4 py-3 text-white/80">{formatTime(req.date)}</td>
+                      <td className="px-4 py-3 text-white/80">{req.venue}, {req.city}</td>
+                      <td className="px-4 py-3 text-white/80">{req.name}</td>
+                      <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${req.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : req.status === 'accepted' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                           {statusLabels[req.status] || req.status}
                         </span>
                       </td>
-                      <td className="px-4 py-2 space-x-2">
+                      <td className="px-4 py-3 space-x-2" onClick={e => e.stopPropagation()}>
+                        <button
+                          className="p-1 bg-white/10 hover:bg-white/20 rounded"
+                          title="Ver detalles"
+                          onClick={() => handleRowClick(req)}
+                        >
+                          <EyeIcon className="h-5 w-5 text-white/80" />
+                        </button>
                         {req.status === 'pending' && editingId !== req.id && (
                           <>
                             <button
@@ -227,21 +282,41 @@ const EventRequestsPage = () => {
               </div>
             ) : (
               requests.map((req) => (
-                <div key={req.id} className="bg-[#101119] rounded-lg shadow-md border border-white/10 p-4 flex flex-col gap-2">
-                  <div className="text-xs text-white/50 uppercase mb-1">Evento</div>
-                  <div className="text-base font-bold text-white break-words mb-1">{req.event_name}</div>
-                  <div className="text-xs text-white/50 uppercase mb-1">Artista</div>
-                  <div className="text-sm text-white/80 break-words mb-1">{req.artist}</div>
-                  <div className="text-xs text-white/50 uppercase mb-1">Fecha</div>
-                  <div className="text-sm text-white/80 mb-1">{new Date(req.date).toLocaleDateString()}</div>
-                  <div className="text-xs text-white/50 uppercase mb-1">Estado</div>
-                  <div className="mb-1">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${req.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : req.status === 'accepted' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                      {statusLabels[req.status] || req.status}
-                    </span>
+                <div 
+                  key={req.id} 
+                  className="bg-[#101119] rounded-lg shadow-md border border-white/10 p-4 flex flex-col gap-2 cursor-pointer hover:bg-white/5 transition-colors duration-200"
+                  onClick={() => handleRowClick(req)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="text-xs text-white/50 uppercase mb-1">Evento</div>
+                      <div className="text-base font-bold text-white break-words mb-1">{req.event_name}</div>
+                      <div className="text-xs text-white/50 uppercase mb-1">Artista</div>
+                      <div className="text-sm text-white/80 break-words mb-1">{req.artist}</div>
+                      <div className="text-xs text-white/50 uppercase mb-1">Fecha y Hora</div>
+                      <div className="text-sm text-white/80 mb-1">
+                        {formatDate(req.date)} {formatTime(req.date) !== 'Sin hora' && `• ${formatTime(req.date)}`}
+                      </div>
+                      <div className="text-xs text-white/50 uppercase mb-1">Estado</div>
+                      <div className="mb-1">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${req.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : req.status === 'accepted' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {statusLabels[req.status] || req.status}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      className="p-2 bg-white/10 hover:bg-white/20 rounded ml-2"
+                      title="Ver detalles"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(req);
+                      }}
+                    >
+                      <EyeIcon className="h-5 w-5 text-white/80" />
+                    </button>
                   </div>
                   <div className="text-xs text-white/50 uppercase mb-1">Acciones</div>
-                  <div className="flex gap-2 mb-1 flex-wrap">
+                  <div className="flex gap-2 mb-1 flex-wrap" onClick={e => e.stopPropagation()}>
                     {req.status === 'pending' && editingId !== req.id && (
                       <>
                         <button
@@ -256,7 +331,7 @@ const EventRequestsPage = () => {
                           onClick={() => handleStatusChange(req.id, 'discarded')}
                           disabled={actionLoading === req.id}
                         >
-                          {actionLoading === req.id ? 'Guardando...' : 'Descartar'}
+                          {actionLoading === req.id ? 'Guardando...' : 'Rechazar'}
                         </button>
                       </>
                     )}
@@ -302,6 +377,15 @@ const EventRequestsPage = () => {
           </div>
         </>
       )}
+
+      {/* Modal de detalles */}
+      <EventRequestDetailModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        eventRequest={selectedRequest}
+        onStatusChange={handleStatusChange}
+        actionLoading={actionLoading !== null}
+      />
     </Layout>
   );
 };

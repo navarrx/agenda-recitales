@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createEventRequest } from '../../services/api';
+import { createEventRequest, uploadPendingImage } from '../../services/api';
 import { sanitizeEventRequest, validateEmail, validateUrl, validateLength } from '../../utils/security';
 
 interface EventRequestModalProps {
@@ -14,6 +14,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
     eventName: '',
     artist: '',
     date: '',
+    time: '',
     venue: '',
     city: '',
     ticketUrl: '',
@@ -22,6 +23,37 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        setError('Por favor selecciona un archivo de imagen válido (JPG, PNG, GIF, etc.)');
+        return;
+      }
+      
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('El archivo es demasiado grande. Máximo 5MB permitido.');
+        return;
+      }
+      
+      setImageFile(file);
+      setError(null);
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,19 +70,39 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
         return;
       }
       
-      // Convertir date a formato ISO completo
-      const isoDate = sanitized.date ? `${sanitized.date}T00:00:00` : '';
+      // Subir imagen si se seleccionó una
+      let finalImageUrl = imageUrl;
+      if (imageFile && !imageUrl) {
+        setUploadingImage(true);
+        try {
+          const uploadResult = await uploadPendingImage(imageFile);
+          if (uploadResult.success) {
+            finalImageUrl = uploadResult.image_url;
+          } else {
+            throw new Error('Error al subir la imagen');
+          }
+        } catch (uploadError) {
+          setError('Error al subir la imagen. Intenta nuevamente.');
+          setLoading(false);
+          setUploadingImage(false);
+          return;
+        } finally {
+          setUploadingImage(false);
+        }
+      }
       
       await createEventRequest({
         name: sanitized.name,
         email: sanitized.email,
         event_name: sanitized.eventName,
         artist: sanitized.artist,
-        date: isoDate,
+        date: sanitized.date,
+        time: sanitized.time || undefined,
         venue: sanitized.venue,
         city: sanitized.city,
         ticket_url: sanitized.ticketUrl,
         message: sanitized.message,
+        image_url: finalImageUrl || undefined,
       });
       
       alert('Gracias por tu solicitud. Nos pondremos en contacto contigo pronto.');
@@ -61,6 +113,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
         eventName: '',
         artist: '',
         date: '',
+        time: '',
         venue: '',
         city: '',
         ticketUrl: '',
@@ -68,6 +121,9 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
       });
       setFieldErrors({});
       setError(null);
+      setImageFile(null);
+      setImagePreview(null);
+      setImageUrl(null);
     } catch (err: any) {
       setError('Ocurrió un error al enviar la solicitud. Intenta nuevamente.');
     } finally {
@@ -98,6 +154,12 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
         const date = new Date(value);
         const now = new Date();
         if (date <= now) return 'La fecha debe ser futura';
+        break;
+      case 'time':
+        if (value) {
+          const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+          if (!timeRegex.test(value)) return 'El formato de hora debe ser HH:MM (ej: 20:30)';
+        }
         break;
       case 'venue':
         if (!value || value.length < 2) return 'El lugar debe tener al menos 2 caracteres';
@@ -134,7 +196,8 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
         sanitizedValue = value.trim().replace(/\s+/g, '');
         break;
       case 'date':
-        // Para fecha, no sanitizar
+      case 'time':
+        // Para fecha y hora, no sanitizar
         sanitizedValue = value;
         break;
       default:
@@ -281,6 +344,24 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
               </div>
               <div>
                 <label className="block text-white/80 text-sm font-medium mb-1">
+                  Hora del evento (opcional)
+                </label>
+                <input
+                  type="time"
+                  name="time"
+                  value={formData.time}
+                  onChange={handleChange}
+                  className={`input w-full bg-white/10 text-white placeholder-white/50 border-white/20 ${
+                    fieldErrors.time ? 'border-red-500' : ''
+                  }`}
+                  placeholder="20:30"
+                />
+                {fieldErrors.time && (
+                  <p className="text-red-400 text-xs mt-1">{fieldErrors.time}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-white/80 text-sm font-medium mb-1">
                   Lugar del evento
                 </label>
                 <input
@@ -297,24 +378,25 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
                   <p className="text-red-400 text-xs mt-1">{fieldErrors.venue}</p>
                 )}
               </div>
-              <div>
-                <label className="block text-white/80 text-sm font-medium mb-1">
-                  Ciudad
-                </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className={`input w-full bg-white/10 text-white placeholder-white/50 border-white/20 ${
-                    fieldErrors.city ? 'border-red-500' : ''
-                  }`}
-                  required
-                />
-                {fieldErrors.city && (
-                  <p className="text-red-400 text-xs mt-1">{fieldErrors.city}</p>
-                )}
-              </div>
+            </div>
+
+            <div>
+              <label className="block text-white/80 text-sm font-medium mb-1">
+                Ciudad
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                className={`input w-full bg-white/10 text-white placeholder-white/50 border-white/20 ${
+                  fieldErrors.city ? 'border-red-500' : ''
+                }`}
+                required
+              />
+              {fieldErrors.city && (
+                <p className="text-red-400 text-xs mt-1">{fieldErrors.city}</p>
+              )}
             </div>
 
             <div>
@@ -358,6 +440,44 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
               )}
             </div>
 
+            <div>
+              <label className="block text-white/80 text-sm font-medium mb-1">
+                Imagen del evento (opcional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                id="event-image-upload"
+              />
+              <label
+                htmlFor="event-image-upload"
+                className="w-full px-4 py-3 border-2 border-dashed border-white/20 bg-white/5 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1a48c4]/50 focus:border-[#1a48c4] text-white/70 hover:text-white hover:border-white/40 transition-all duration-200 cursor-pointer flex items-center justify-center"
+              >
+                {imagePreview ? (
+                  <div className="text-center">
+                    <div className="text-green-400 mb-2">✓ Imagen seleccionada</div>
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="max-w-full max-h-32 mx-auto rounded"
+                    />
+                    <div className="text-sm mt-2">{imageFile?.name}</div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">📸</div>
+                    <div>Haz clic para seleccionar una imagen</div>
+                    <div className="text-xs mt-1">JPG, PNG, GIF (máx. 5MB)</div>
+                  </div>
+                )}
+              </label>
+              <p className="text-white/60 text-sm mt-1">
+                Agrega una imagen representativa del evento. Se mostrará en la agenda cuando sea aprobado.
+              </p>
+            </div>
+
             {error && (
               <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded mb-2 text-center">
                 {error}
@@ -375,9 +495,9 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
               <button
                 type="submit"
                 className="btn bg-[#1a48c4] text-white hover:bg-[#1a48c4]/90"
-                disabled={loading}
+                disabled={loading || uploadingImage}
               >
-                {loading ? 'Enviando...' : 'Enviar solicitud'}
+                {uploadingImage ? 'Subiendo imagen...' : loading ? 'Enviando...' : 'Enviar solicitud'}
               </button>
             </div>
           </form>
