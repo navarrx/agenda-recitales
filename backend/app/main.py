@@ -74,13 +74,30 @@ async def check_cors_headers(request: Request, call_next):
     logger.info(f"Recibida solicitud a: {request.url.path}")
     logger.info(f"Método: {request.method}")
     logger.info(f"Origin: {request.headers.get('origin', 'No origin header')}")
-    
-    response = await call_next(request)
-    
+    import time
+    start_time = time.time()
+    try:
+        logger.info("Antes de call_next(request)")
+        # --- PATCH: Read and re-inject body for POST/PUT/PATCH ---
+        if request.method in ("POST", "PUT", "PATCH"):
+            body = await request.body()
+            # (Optional) Log body size or content for debugging
+            logger.info(f"[PATCH] Middleware - Body read, reinjecting for downstream. Size: {len(body)} bytes")
+            async def receive():
+                return {"type": "http.request", "body": body}
+            request._receive = receive
+        # --- END PATCH ---
+        response = await call_next(request)
+        logger.info("Después de call_next(request)")
+    except Exception as e:
+        logger.error(f"Excepción en call_next: {e}", exc_info=True)
+        raise
+    finally:
+        elapsed = time.time() - start_time
+        logger.info(f"Tiempo transcurrido en call_next: {elapsed:.2f} segundos")
     # Loguear los headers para depuración
     logger.info(f"Response status: {response.status_code}")
     logger.info(f"Response CORS headers: {dict(response.headers)}")
-    
     return response
 
 # Include routers

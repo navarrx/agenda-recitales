@@ -146,7 +146,15 @@ def create_event_root(
     Create a new event (admin only) - route without trailing slash
     """
     logger.info(f"POST /events request received (root route)")
-    return crud.create_event(db=db, event=event)
+    logger.info(f"Request body: {event}")
+    try:
+        logger.info("Calling crud.create_event...")
+        result = crud.create_event(db=db, event=event)
+        logger.info(f"Event created successfully: {result.id if result else None}")
+        return result
+    except Exception as e:
+        logger.error(f"Exception in create_event_root: {e}", exc_info=True)
+        raise
 
 @router.post("/", response_model=schemas.Event)
 def create_event(
@@ -158,7 +166,15 @@ def create_event(
     Create a new event (admin only)
     """
     logger.info(f"POST /events request received")
-    return crud.create_event(db=db, event=event)
+    logger.info(f"Request body: {event}")
+    try:
+        logger.info("Calling crud.create_event...")
+        result = crud.create_event(db=db, event=event)
+        logger.info(f"Event created successfully: {result.id if result else None}")
+        return result
+    except Exception as e:
+        logger.error(f"Exception in create_event: {e}", exc_info=True)
+        raise
 
 @router.put("/{event_id}", response_model=schemas.Event)
 def update_event(
@@ -171,11 +187,19 @@ def update_event(
     Update an existing event (admin only)
     """
     logger.info(f"PUT /events/{event_id} request received")
-    
-    db_event = crud.update_event(db, event_id=event_id, event=event)
-    if db_event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
-    return db_event
+    logger.info(f"Request body: {event}")
+    try:
+        logger.info("Calling crud.update_event...")
+        db_event = crud.update_event(db, event_id=event_id, event=event)
+        logger.info(f"crud.update_event returned: {db_event}")
+        if db_event is None:
+            logger.warning(f"Event not found: {event_id}")
+            raise HTTPException(status_code=404, detail="Event not found")
+        logger.info(f"Event updated successfully: {event_id}")
+        return db_event
+    except Exception as e:
+        logger.error(f"Exception in update_event: {e}", exc_info=True)
+        raise
 
 @router.delete("/{event_id}")
 def delete_event(

@@ -55,13 +55,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
-async def get_current_admin_user(current_user: models.User = Depends(get_current_user)):
-    if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
-    return current_user
+async def get_current_admin_user(user: models.User = Depends(get_current_user)):
+    import logging
+    logger = logging.getLogger("app.auth")
+    logger.info("[get_current_admin_user] Called.")
+    logger.info(f"[get_current_admin_user] User: {getattr(user, 'username', None)}")
+    if not user or not user.is_admin:
+        logger.warning("[get_current_admin_user] Not admin or not authenticated.")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    logger.info("[get_current_admin_user] Admin authenticated.")
+    return user
 
 def create_initial_admin(db: Session):
     """Create initial admin user if no admin exists"""
@@ -87,4 +90,4 @@ def create_initial_admin(db: Session):
     db.add(admin_user)
     db.commit()
     db.refresh(admin_user)
-    return admin_user 
+    return admin_user
