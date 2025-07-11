@@ -312,8 +312,19 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
   const hasActiveFilters = selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || searchTerm;
 
+  // FILTRO DE EVENTOS POR FECHA ACTUAL
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Ignorar hora para comparar solo fecha
+
+  // Filtrar eventos futuros o de hoy para todas las vistas
+  const futureEvents = events.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate >= today;
+  });
+
   // Calcula los eventos que coinciden con los filtros aplicados
-  const filteredResults = events
+  const filteredResults = futureEvents
     .filter(event => {
       const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           event.artist.toLowerCase().includes(searchTerm.toLowerCase());
@@ -512,6 +523,13 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     (selectedDate ? 1 : 0) +
     (selectedCities.length > 0 ? 1 : 0) +
     (searchTerm ? 1 : 0);
+
+  // Filtrar eventos cercanos futuros
+  const futureNearbyEvents = nearbyEvents.filter(e => {
+    const eventDate = new Date(e.date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate >= today;
+  });
 
   return (
     <>
@@ -1617,11 +1635,6 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             color: #656A78;
           }
 
-          .calendar-day.first-day {
-            background: #1a48c4;
-            color: #ffffff;
-          }
-
           .calendar-day.selected-day {
             background: #153a9e;
             color: #ffffff;
@@ -1681,11 +1694,6 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
           .calendar-day:disabled:hover {
             background: #171717;
-          }
-
-          .calendar-day.first-day {
-            background: #1a48c4;
-            color: #ffffff;
           }
 
           /* Estilos para las ciudades seleccionadas */
@@ -2023,10 +2031,10 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                         Los eventos más importantes
                       </p>
                       <div className="flex overflow-x-auto gap-4 pb-2" style={{scrollSnapType: 'x mandatory'}}>
-                        {events.filter(e => e.is_featured).length === 0 ? (
+                        {futureEvents.filter(e => e.is_featured).length === 0 ? (
                           <div className="flex-1 text-center text-[#101119]/60">No hay eventos destacados</div>
                         ) : (
-                          events.filter(e => e.is_featured).map((event, idx, arr) => (
+                          futureEvents.filter(e => e.is_featured).map((event, idx, arr) => (
                             <div
                               key={event.id}
                               className="card-hover flex flex-col cursor-pointer shadow hover:shadow-lg transition w-[300px] min-w-[300px] max-w-[300px] h-[450px]"
@@ -2101,11 +2109,11 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                         <div className="text-center text-[#101119]/60">Cargando eventos cercanos...</div>
                       ) : !coords ? (
                         <div className="text-center text-[#101119]/60">No se pudo obtener tu ubicación o no la permitiste.</div>
-                      ) : nearbyEvents.length === 0 ? (
+                      ) : futureNearbyEvents.length === 0 ? (
                         <div className="text-center text-[#101119]/60">No hay eventos cercanos a tu ubicación.</div>
                       ) : (
                         <div className="flex overflow-x-auto gap-4 pb-2" style={{scrollSnapType: 'x mandatory'}}>
-                          {nearbyEvents.map((event, idx, arr) => (
+                          {futureNearbyEvents.map((event, idx, arr) => (
                             <div
                               key={event.id}
                               className="card-hover flex flex-col cursor-pointer shadow hover:shadow-lg transition w-[300px] min-w-[300px] max-w-[300px] h-[450px]"
@@ -2331,8 +2339,6 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                           key={index}
                           className={`calendar-day ${
                             !day.isCurrentMonth ? 'other-month' : ''
-                          } ${
-                            day.isCurrentMonth && day.date.getDate() === 1 ? 'first-day' : ''
                           } ${
                             tempSelectedDate && 
                             day.date.getDate() === tempSelectedDate.getDate() &&

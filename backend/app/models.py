@@ -52,4 +52,17 @@ class EventRequest(Base):
     image_url = Column(String, nullable=True)
     status = Column(String, default="pending")
     created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+class Venue(Base):
+    __tablename__ = "venues"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=False)
+    address = Column(String, nullable=False)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    location = Column(String, nullable=True)  # Campo adicional para ubicación descriptiva
+    city = Column(String, index=True, nullable=True)
+    created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now()) 

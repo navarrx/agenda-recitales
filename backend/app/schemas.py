@@ -219,4 +219,38 @@ class EventRequest(BaseModel):
         orm_mode = True
 
 class EventRequestUpdateStatus(BaseModel):
-    status: str 
+    status: str
+
+class VenueBase(BaseModel):
+    name: str
+    address: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    location: Optional[str] = None
+    city: Optional[str] = None
+
+class VenueCreate(VenueBase):
+    pass
+
+class VenueUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    location: Optional[str] = None
+    city: Optional[str] = None
+
+class Venue(VenueBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class VenueList(BaseModel):
+    items: List[Venue]
+    total: int
+
+    class Config:
+        orm_mode = True 

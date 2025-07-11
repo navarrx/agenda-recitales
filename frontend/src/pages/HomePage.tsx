@@ -78,7 +78,7 @@ const HomePage = () => {
                 className="absolute w-full h-full object-cover"
                 style={{ 
                   transform: `scale(1.2) rotate(${useTransform(mouseX, [-1, 1], [-1, 1])}deg)`,
-                  filter: 'blur(3px) brightness(0.7)',
+                  filter: 'blur(1px) brightness(0.9)',
                 }}
               >
                 <source src="/videos/hero-background.mp4" type="video/mp4" />

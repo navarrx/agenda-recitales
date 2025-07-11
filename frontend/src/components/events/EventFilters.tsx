@@ -270,7 +270,7 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
               />
             </div>
             {/* Género - dropdown custom igual al de Tipo */}
-            <div className="w-[90px] relative md:w-36">
+            <div className="w-[90px] relative md:w-36 ml-5 md:ml-0">
               <label className="block text-sm font-medium text-white/80 mb-1">Género</label>
               {/* Mobile: dropdown custom */}
               <div className="block md:hidden" ref={genreDropdownRef}>

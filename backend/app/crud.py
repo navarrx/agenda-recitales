@@ -190,4 +190,76 @@ def update_event_request_status(db: Session, request_id: int, status: str):
         db_request.updated_at = func.now()
         db.commit()
         db.refresh(db_request)
-    return db_request 
+    return db_request
+
+# Venue CRUD operations
+def get_venues(db: Session, skip: int = 0, limit: int = 100, city: Optional[str] = None, search: Optional[str] = None):
+    query = db.query(models.Venue)
+    
+    if city:
+        query = query.filter(models.Venue.city == city)
+    if search:
+        if len(search) > 100:
+            search = search[:100]
+        
+        search_filter = or_(
+            models.Venue.name.ilike(f"%{search}%"),
+            models.Venue.address.ilike(f"%{search}%"),
+            models.Venue.location.ilike(f"%{search}%")
+        )
+        query = query.filter(search_filter)
+    
+    total = query.count()
+    venues = query.order_by(models.Venue.name).offset(skip).limit(limit).all()
+    
+    return {
+        "items": venues,
+        "total": total
+    }
+
+def get_venue(db: Session, venue_id: int):
+    return db.query(models.Venue).filter(models.Venue.id == venue_id).first()
+
+def create_venue(db: Session, venue: schemas.VenueCreate):
+    db_venue = models.Venue(**venue.dict())
+    db.add(db_venue)
+    db.commit()
+    db.refresh(db_venue)
+    return db_venue
+
+def update_venue(db: Session, venue_id: int, venue: schemas.VenueUpdate):
+    db_venue = db.query(models.Venue).filter(models.Venue.id == venue_id).first()
+    if db_venue:
+        for key, value in venue.dict(exclude_unset=True).items():
+            setattr(db_venue, key, value)
+        db_venue.updated_at = func.now()
+        db.commit()
+        db.refresh(db_venue)
+    return db_venue
+
+def delete_venue(db: Session, venue_id: int):
+    db_venue = db.query(models.Venue).filter(models.Venue.id == venue_id).first()
+    if db_venue:
+        db.delete(db_venue)
+        db.commit()
+        return True
+    return False
+
+def get_venue_cities(db: Session):
+    return db.query(models.Venue.city).distinct().filter(models.Venue.city.isnot(None)).all()
+
+def bulk_create_venues(db: Session, venues: List[schemas.VenueCreate]):
+    """Create multiple venues in a single transaction"""
+    db_venues = []
+    for venue_data in venues:
+        db_venue = models.Venue(**venue_data.dict())
+        db_venues.append(db_venue)
+    
+    db.add_all(db_venues)
+    db.commit()
+    
+    # Refresh all venues to get their IDs
+    for venue in db_venues:
+        db.refresh(venue)
+    
+    return db_venues 

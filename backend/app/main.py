@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from . import models, auth
 from .database import engine, get_db
 from .routers import events, auth as auth_router
-from .routers import event_requests, upload
+from .routers import event_requests, upload, venues
 from .middleware import add_security_middleware
 import os
 import logging
@@ -88,6 +88,7 @@ app.include_router(events.router)
 app.include_router(auth_router.router)
 app.include_router(event_requests.router)
 app.include_router(upload.router)
+app.include_router(venues.router)
 
 # Añadir un endpoint explícito para /events para asegurar que funciona
 @app.get("/events")
