@@ -6,12 +6,12 @@ import re
 class EventBase(BaseModel):
     name: str
     artist: str
-    genre: str
+    genre: Optional[str] = None
     date: datetime
     location: str
     city: str
     venue: str
-    description: str
+    description: Optional[str] = None
     image_url: Optional[str] = None
     ticket_url: Optional[str] = None
     is_featured: bool = False
@@ -219,7 +219,7 @@ class EventRequest(BaseModel):
         orm_mode = True
 
 class EventRequestUpdateStatus(BaseModel):
-    status: str
+    status: str 
 
 class VenueBase(BaseModel):
     name: str

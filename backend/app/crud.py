@@ -190,7 +190,7 @@ def update_event_request_status(db: Session, request_id: int, status: str):
         db_request.updated_at = func.now()
         db.commit()
         db.refresh(db_request)
-    return db_request
+    return db_request 
 
 # Venue CRUD operations
 def get_venues(db: Session, skip: int = 0, limit: int = 100, city: Optional[str] = None, search: Optional[str] = None):
