@@ -109,6 +109,9 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const [nearbyEvents, setNearbyEvents] = useState<Event[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState<string | null>(null);
+  const [nearbyHasMore, setNearbyHasMore] = useState(true);
+  const [nearbySkip, setNearbySkip] = useState(0);
+  const [isLoadingMoreNearby, setIsLoadingMoreNearby] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
   const [showCitiesCard, setShowCitiesCard] = useState(false);
@@ -131,6 +134,13 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   // Estado para el modal de búsqueda
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [tempSearchTerm, setTempSearchTerm] = useState(searchTerm);
+
+  // Estados para eventos destacados
+  const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(false);
+  const [featuredHasMore, setFeaturedHasMore] = useState(true);
+  const [featuredSkip, setFeaturedSkip] = useState(0);
+  const [isLoadingMoreFeatured, setIsLoadingMoreFeatured] = useState(false);
 
   // Reiniciar el input de búsqueda cada vez que se abre el modal
   useEffect(() => {
@@ -180,13 +190,69 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     fetchEvents();
   }, [selectedGenre, selectedCity, selectedDate]);
 
+  // Cargar eventos destacados
+  useEffect(() => {
+    const fetchFeaturedEvents = async () => {
+      try {
+        setFeaturedLoading(true);
+        setFeaturedSkip(0);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/events/featured?skip=0&limit=12`);
+        if (!response.ok) {
+          throw new Error('Error al cargar eventos destacados');
+        }
+        const data = await response.json();
+        if (!data || !data.items || !Array.isArray(data.items)) {
+          throw new Error('Formato de respuesta inválido para eventos destacados');
+        }
+        setFeaturedEvents(data.items);
+        setFeaturedHasMore(data.hasMore);
+      } catch (err) {
+        console.error('Error fetching featured events:', err);
+      } finally {
+        setFeaturedLoading(false);
+      }
+    };
+
+    fetchFeaturedEvents();
+  }, []);
+
+  // Función para cargar más eventos destacados
+  const loadMoreFeaturedEvents = async () => {
+    if (isLoadingMoreFeatured || !featuredHasMore) return;
+
+    try {
+      setIsLoadingMoreFeatured(true);
+      const nextSkip = featuredSkip + 12;
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/events/featured?skip=${nextSkip}&limit=12`);
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar más eventos destacados');
+      }
+      
+      const data = await response.json();
+      if (!data || !data.items || !Array.isArray(data.items)) {
+        throw new Error('Formato de respuesta inválido para eventos destacados');
+      }
+      
+      setFeaturedEvents(prev => [...prev, ...data.items]);
+      setFeaturedHasMore(data.hasMore);
+      setFeaturedSkip(nextSkip);
+    } catch (err) {
+      console.error('Error loading more featured events:', err);
+    } finally {
+      setIsLoadingMoreFeatured(false);
+    }
+  };
+
   useEffect(() => {
     if (coords) {
       setNearbyLoading(true);
-      fetch(`${import.meta.env.VITE_API_URL}/events/nearby?lat=${coords.lat}&lng=${coords.lng}&radius=50`)
+      setNearbySkip(0);
+      fetch(`${import.meta.env.VITE_API_URL}/events/nearby?lat=${coords.lat}&lng=${coords.lng}&radius=50&skip=0&limit=12`)
         .then(res => res.json())
         .then(data => {
           setNearbyEvents(data.items || []);
+          setNearbyHasMore(data.hasMore);
           setNearbyLoading(false);
         })
         .catch(() => {
@@ -530,6 +596,47 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     eventDate.setHours(0, 0, 0, 0);
     return eventDate >= today;
   });
+
+  // Función para cargar más eventos cercanos
+  const loadMoreNearbyEvents = async () => {
+    if (isLoadingMoreNearby || !nearbyHasMore || !coords) return;
+
+    try {
+      setIsLoadingMoreNearby(true);
+      const nextSkip = nearbySkip + 12;
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/events/nearby?lat=${coords.lat}&lng=${coords.lng}&radius=50&skip=${nextSkip}&limit=12`);
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar más eventos cercanos');
+      }
+      
+      const data = await response.json();
+      if (!data || !data.items || !Array.isArray(data.items)) {
+        throw new Error('Formato de respuesta inválido para eventos cercanos');
+      }
+      
+      setNearbyEvents(prev => [...prev, ...data.items]);
+      setNearbyHasMore(data.hasMore);
+      setNearbySkip(nextSkip);
+    } catch (err) {
+      console.error('Error loading more nearby events:', err);
+    } finally {
+      setIsLoadingMoreNearby(false);
+    }
+  };
+
+  // Función para detectar scroll horizontal y cargar más eventos
+  const handleHorizontalScroll = (event: React.UIEvent<HTMLDivElement>, loadMoreFunction: () => void) => {
+    const target = event.currentTarget;
+    const scrollLeft = target.scrollLeft;
+    const scrollWidth = target.scrollWidth;
+    const clientWidth = target.clientWidth;
+    
+    // Si está cerca del final (con un margen de 100px), cargar más
+    if (scrollLeft + clientWidth >= scrollWidth - 100) {
+      loadMoreFunction();
+    }
+  };
 
   return (
     <>
@@ -1796,7 +1903,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
       <div className="embedded-agenda min-h-screen bg-[#101119]" style={{ width, fontFamily: 'Poppins, Inter, sans-serif', overflowX: 'hidden' }}>
         <div className="agenda-container">
-          <div className="mb-8 px-6">
+          <div className="mb-8 px-6" style={{ paddingTop: '88px' }}>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
               Eventos y Recitales
             </h1>
@@ -1895,7 +2002,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                           key={event.id}
                           className="flex items-center bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition cursor-pointer"
                           style={{ minHeight: 90, fontFamily: 'Poppins, Inter, sans-serif' }}
-                          onClick={() => handleViewMore(event.id)}
+                          onClick={() => handleEventClick(event)}
                         >
                           {/* Fecha o HOY */}
                           <div style={{width: 90, minWidth: 90, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '90px'}}>
@@ -1935,6 +2042,19 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       );
                     })
                   )}
+                  
+                  {/* Botón Cargar más para modo lista */}
+                  {hasMore && (
+                    <div className="flex justify-center mt-6">
+                      <button
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        className="px-6 py-3 bg-[#1a48c4] text-white rounded-lg font-semibold hover:bg-[#153a9e] transition-colors disabled:opacity-50"
+                      >
+                        {isLoadingMore ? 'Cargando...' : 'Cargar más'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1953,7 +2073,11 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                     {filteredResults.length === 0 ? (
                       <div className="text-center text-[#101119]/60">No se encontraron eventos con los filtros aplicados</div>
                     ) : (
-                      <div className="flex overflow-x-auto gap-4 pb-2" style={{scrollSnapType: 'x mandatory'}}>
+                      <div 
+                        className="flex overflow-x-auto gap-4 pb-2" 
+                        style={{scrollSnapType: 'x mandatory'}}
+                        onScroll={(e) => handleHorizontalScroll(e, handleLoadMore)}
+                      >
                         {filteredResults.map((event, idx, arr) => (
                           <div
                             key={event.id}
@@ -2013,6 +2137,16 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                             </div>
                           </div>
                         ))}
+                        
+                        {/* Indicador de carga para resultados filtrados */}
+                        {isLoadingMore && (
+                          <div className="flex items-center justify-center w-[300px] min-w-[300px] h-[450px] bg-gray-100 rounded-lg">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a48c4] mx-auto mb-2"></div>
+                              <p className="text-sm text-gray-600">Cargando más eventos...</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2030,11 +2164,17 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       <p className="text-base md:text-lg text-[#101119]/70 mb-6" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
                         Los eventos más importantes
                       </p>
-                      <div className="flex overflow-x-auto gap-4 pb-2" style={{scrollSnapType: 'x mandatory'}}>
-                        {futureEvents.filter(e => e.is_featured).length === 0 ? (
+                      <div 
+                        className="flex overflow-x-auto gap-4 pb-2" 
+                        style={{scrollSnapType: 'x mandatory'}}
+                        onScroll={(e) => handleHorizontalScroll(e, loadMoreFeaturedEvents)}
+                      >
+                        {featuredLoading ? (
+                          <div className="flex-1 text-center text-[#101119]/60">Cargando eventos destacados...</div>
+                        ) : featuredEvents.length === 0 ? (
                           <div className="flex-1 text-center text-[#101119]/60">No hay eventos destacados</div>
                         ) : (
-                          futureEvents.filter(e => e.is_featured).map((event, idx, arr) => (
+                          featuredEvents.map((event, idx, arr) => (
                             <div
                               key={event.id}
                               className="card-hover flex flex-col cursor-pointer shadow hover:shadow-lg transition w-[300px] min-w-[300px] max-w-[300px] h-[450px]"
@@ -2094,6 +2234,16 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                             </div>
                           ))
                         )}
+                        
+                        {/* Indicador de carga para eventos destacados */}
+                        {isLoadingMoreFeatured && (
+                          <div className="flex items-center justify-center w-[300px] min-w-[300px] h-[450px] bg-gray-100 rounded-lg">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a48c4] mx-auto mb-2"></div>
+                              <p className="text-sm text-gray-600">Cargando más eventos...</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2112,7 +2262,11 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       ) : futureNearbyEvents.length === 0 ? (
                         <div className="text-center text-[#101119]/60">No hay eventos cercanos a tu ubicación.</div>
                       ) : (
-                        <div className="flex overflow-x-auto gap-4 pb-2" style={{scrollSnapType: 'x mandatory'}}>
+                        <div 
+                          className="flex overflow-x-auto gap-4 pb-2" 
+                          style={{scrollSnapType: 'x mandatory'}}
+                          onScroll={(e) => handleHorizontalScroll(e, loadMoreNearbyEvents)}
+                        >
                           {futureNearbyEvents.map((event, idx, arr) => (
                             <div
                               key={event.id}
@@ -2168,11 +2322,21 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                                   >
                                     Comprar entradas
                                   </a>
-                                )}
-                              </div>
+                                                              )}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
+                        
+                        {/* Indicador de carga para eventos cercanos */}
+                        {isLoadingMoreNearby && (
+                          <div className="flex items-center justify-center w-[300px] min-w-[300px] h-[450px] bg-gray-100 rounded-lg">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a48c4] mx-auto mb-2"></div>
+                              <p className="text-sm text-gray-600">Cargando más eventos...</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       )}
                     </div>
                   </div>
@@ -2540,7 +2704,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             </div>
 
             {/* Imagen del evento */}
-            <div className="relative h-64 overflow-hidden">
+            <div className="relative h-100 overflow-hidden">
               {selectedEvent.image_url ? (
                 <img 
                   src={selectedEvent.image_url} 

@@ -89,6 +89,7 @@ export const getEvent = async (id: number): Promise<Event> => {
 
 export const getGenres = async (): Promise<string[]> => {
   const response = await apiClient.get('/events/filters/genres');
+  console.log('[API] getGenres - response:', response.data);
   return response.data;
 };
 

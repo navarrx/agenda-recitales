@@ -89,6 +89,26 @@ def read_events(
     )
     return events
 
+@router.get("/featured", response_model=schemas.EventList)
+def get_featured_events(
+    request: Request,
+    skip: int = 0,
+    limit: int = 12,
+    db: Session = Depends(database.get_db)
+):
+    """
+    Get featured events
+    """
+    logger.info(f"GET /events/featured request received")
+    logger.info(f"Query params: skip={skip}, limit={limit}")
+    
+    events = crud.get_featured_events(
+        db, 
+        skip=skip, 
+        limit=limit
+    )
+    return events
+
 @router.get("/nearby", response_model=schemas.EventList)
 def get_nearby_events(
     request: Request,
@@ -290,7 +310,9 @@ def get_genres(db: Session = Depends(database.get_db)):
     logger.info(f"GET /events/filters/genres request received")
     
     genre_rows = crud.get_genres(db)
-    return [genre[0] for genre in genre_rows]
+    genres = [genre[0] for genre in genre_rows]
+    logger.info(f"Genres found: {genres}")
+    return genres
 
 @router.get("/filters/cities", response_model=List[str])
 def get_cities(db: Session = Depends(database.get_db)):

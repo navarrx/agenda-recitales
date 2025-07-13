@@ -17,6 +17,10 @@ def get_events(
 ):
     query = db.query(models.Event)
     
+    # Por defecto, solo mostrar eventos futuros o de hoy
+    today = datetime.now().date()
+    query = query.filter(func.date(models.Event.date) >= today)
+    
     # Apply filters
     if genre:
         query = query.filter(models.Event.genre == genre)
@@ -87,10 +91,48 @@ def delete_event(db: Session, event_id: int):
     return False
 
 def get_genres(db: Session):
-    return db.query(models.Event.genre).distinct().all()
+    # Filtrar géneros que no sean None o vacíos
+    genres = db.query(models.Event.genre).filter(
+        models.Event.genre.isnot(None),
+        models.Event.genre != ''
+    ).distinct().all()
+    return genres
 
 def get_cities(db: Session):
     return db.query(models.Event.city).distinct().all()
+
+def get_featured_events(
+    db: Session,
+    skip: int = 0,
+    limit: int = 12
+):
+    """
+    Get featured events that are in the future
+    """
+    # Por defecto, solo mostrar eventos futuros o de hoy
+    today = datetime.now().date()
+    
+    query = db.query(models.Event).filter(
+        models.Event.is_featured == True,
+        func.date(models.Event.date) >= today
+    )
+    
+    # Count total results
+    total = query.count()
+    
+    # Order by date and apply pagination
+    events = query.order_by(models.Event.date).offset(skip).limit(limit + 1).all()
+    
+    # Check if there are more results
+    has_more = len(events) > limit
+    if has_more:
+        events = events[:-1]  # Remove the extra item we fetched
+    
+    return {
+        "items": events,
+        "total": total,
+        "hasMore": has_more
+    }
 
 def get_nearby_events(
     db: Session,
@@ -113,10 +155,14 @@ def get_nearby_events(
         func.sin(func.radians(models.Event.latitude))
     )
     
+    # Por defecto, solo mostrar eventos futuros o de hoy
+    today = datetime.now().date()
+    
     # Query events with coordinates, calculate distance, and filter by radius
     query = db.query(models.Event, distance_expr.label('distance')).filter(
         models.Event.latitude.isnot(None),
         models.Event.longitude.isnot(None),
+        func.date(models.Event.date) >= today,
         distance_expr <= radius
     ).order_by('distance')
     

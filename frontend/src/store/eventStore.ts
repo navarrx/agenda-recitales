@@ -95,6 +95,7 @@ export const useEventStore = create<EventState>((set, get) => ({
   fetchGenres: async () => {
     try {
       const genres = await getGenres();
+      console.log('[Store] fetchGenres - genres received:', genres);
       set({ genres });
     } catch (error) {
       console.error('Error fetching genres:', error);

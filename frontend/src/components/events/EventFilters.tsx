@@ -39,6 +39,11 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
     fetchGenres();
   }, [fetchGenres]);
 
+  // Debug: Log genres when they change
+  useEffect(() => {
+    console.log('[EventFilters] Genres loaded:', genres);
+  }, [genres]);
+
   // Sincronizar estado local con filtros globales
   useEffect(() => {
     setFilters(globalFilters || {});
@@ -276,7 +281,10 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
               <div className="block md:hidden" ref={genreDropdownRef}>
                 <button
                   className="w-[90px] px-2 py-1.5 bg-[#101119] border border-white/20 rounded-md shadow-sm text-white text-xs flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#1a48c4] min-w-0 md:w-[120px] md:px-3 md:py-2 md:text-sm"
-                  onClick={() => setShowGenreDropdown((v) => !v)}
+                  onClick={() => {
+                    console.log('[EventFilters] Genre dropdown clicked, current genres:', genres);
+                    setShowGenreDropdown((v) => !v);
+                  }}
                   type="button"
                 >
                   <span className="truncate text-left flex-1 mr-2 overflow-hidden whitespace-nowrap">
@@ -302,23 +310,26 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
                         <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="flex-shrink-0"><path d="M5 13l4 4L19 7" /></svg>
                       )}
                     </button>
-                    {genres.map((genre) => (
-                      <button
-                        key={genre}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-left text-white text-sm hover:bg-[#1a48c4]/30 transition-colors min-w-0 ${filters.genre === genre ? 'bg-[#1a48c4]/40' : ''}`}
-                        onClick={() => {
-                          setFilters({ ...filters, genre });
-                          onFilterChange({ ...filters, genre });
-                          setShowGenreDropdown(false);
-                        }}
-                        type="button"
-                      >
-                        <span className="flex-1 truncate overflow-hidden whitespace-nowrap">{genre}</span>
-                        {filters.genre === genre && (
-                          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="flex-shrink-0"><path d="M5 13l4 4L19 7" /></svg>
-                        )}
-                      </button>
-                    ))}
+                    {genres.map((genre) => {
+                      console.log('[EventFilters] Rendering genre:', genre);
+                      return (
+                        <button
+                          key={genre}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-left text-white text-sm hover:bg-[#1a48c4]/30 transition-colors min-w-0 ${filters.genre === genre ? 'bg-[#1a48c4]/40' : ''}`}
+                          onClick={() => {
+                            setFilters({ ...filters, genre });
+                            onFilterChange({ ...filters, genre });
+                            setShowGenreDropdown(false);
+                          }}
+                          type="button"
+                        >
+                          <span className="flex-1 truncate overflow-hidden whitespace-nowrap">{genre}</span>
+                          {filters.genre === genre && (
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="flex-shrink-0"><path d="M5 13l4 4L19 7" /></svg>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -331,9 +342,12 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
                     onChange={(e) => handleFilterChange('genre', e.target.value || undefined)}
                   >
                     <option value="">Todos</option>
-                    {genres.map((genre) => (
-                      <option key={genre} value={genre}>{genre}</option>
-                    ))}
+                    {genres.map((genre) => {
+                      console.log('[EventFilters] Desktop select - rendering genre:', genre);
+                      return (
+                        <option key={genre} value={genre}>{genre}</option>
+                      );
+                    })}
                   </select>
                   {/* Flecha de select */}
                   <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
@@ -359,19 +373,19 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onViewModeChange('card')}
-                className={`p-1.5 rounded transition-colors ${viewMode === 'card' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
+                className={`p-2 rounded transition-colors ${viewMode === 'card' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
                 aria-label="Vista en tarjetas"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
               </button>
               <button
                 onClick={() => onViewModeChange('list')}
-                className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
+                className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
                 aria-label="Vista en lista"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -392,19 +406,19 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
           <div className="flex md:hidden items-center ml-2 gap-1">
             <button
               onClick={() => onViewModeChange('card')}
-              className={`p-1.5 rounded transition-colors ${viewMode === 'card' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
+              className={`p-2 rounded transition-colors ${viewMode === 'card' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
               aria-label="Vista en tarjetas"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
             </button>
             <button
               onClick={() => onViewModeChange('list')}
-              className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
+              className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'text-[#1a48c4]' : 'text-white/50 hover:text-white/70'}`}
               aria-label="Vista en lista"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>

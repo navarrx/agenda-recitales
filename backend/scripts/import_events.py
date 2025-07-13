@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """
 Script para importar eventos desde un archivo Excel a la base de datos.
-Uso: python scripts/import_events.py [ruta_al_archivo_excel]
+Uso: python scripts/import_events.py [ruta_al_archivo_excel] [--debug]
 
-El archivo Excel debe tener las siguientes columnas en este orden:
-- Titulo Evento (nombre del evento)
+El archivo Excel debe tener las siguientes columnas con estos nombres exactos:
+- Titulo_Evento (nombre del evento)
 - Time (fecha del evento)
 - Artista (nombre del artista)
 - Venue (nombre del venue)
-- Dirección (calle donde se encuentra el venue)
+- Direccion (calle donde se encuentra el venue)
 - Latitud (coordenada de latitud del lugar del venue)
 - Longitud (coordenada de longitud del lugar del venue)
-- Ubicación (ciudad donde es el venue, ej: CABA)
-- Hora (hora del evento)
-- Link Ticketera (link de la ticketera)
+- Ubicacion (ciudad donde es el venue, ej: CABA)
+- Hora (hora del evento en formato hh:mm:ss)
+- Link_Ticketera (link de la ticketera)
 - URL_Imagen (link del CDN donde está la imagen almacenada)
 
 Ejemplos de uso:
 - python scripts/import_events.py eventos.xlsx
 - python scripts/import_events.py /ruta/completa/eventos.xlsx
+- python scripts/import_events.py eventos.xlsx --debug (para ver información detallada)
 """
 
 import sys
@@ -68,25 +69,42 @@ def read_excel_file(file_path: str) -> pd.DataFrame:
         # Leer el archivo Excel
         df = pd.read_excel(file_path)
         logger.info(f"Archivo Excel leído exitosamente. Filas encontradas: {len(df)}")
+        logger.info(f"Columnas encontradas: {list(df.columns)}")
         
-        # Verificar que tiene al menos 11 columnas
-        if len(df.columns) < 11:
-            logger.error(f"El archivo debe tener al menos 11 columnas. Encontradas: {len(df.columns)}")
+        # Verificar que tiene las columnas requeridas
+        required_columns = [
+            'Titulo_Evento',
+            'Time',
+            'Artista', 
+            'Venue',
+            'Direccion',
+            'Latitud',
+            'Longitud',
+            'Ubicacion',
+            'Hora',
+            'Link_Ticketera',
+            'URL_Imagen'
+        ]
+        
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            logger.error(f"Faltan las siguientes columnas en el archivo: {missing_columns}")
+            logger.error(f"Columnas disponibles: {list(df.columns)}")
             return None
         
         # Renombrar las columnas para que coincidan con nuestro esquema
         column_mapping = {
-            df.columns[0]: 'name',           # Titulo Evento
-            df.columns[1]: 'date_str',       # Time (fecha)
-            df.columns[2]: 'artist',         # Artista
-            df.columns[3]: 'venue',          # Venue
-            df.columns[4]: 'location',       # Dirección
-            df.columns[5]: 'latitude',       # Latitud
-            df.columns[6]: 'longitude',      # Longitud
-            df.columns[7]: 'city',           # Ubicación (ciudad)
-            df.columns[8]: 'time_str',       # Hora
-            df.columns[9]: 'ticket_url',     # Link Ticketera
-            df.columns[10]: 'image_url'      # URL_Imagen
+            'Titulo_Evento': 'name',
+            'Time': 'date_str',
+            'Artista': 'artist',
+            'Venue': 'venue',
+            'Direccion': 'location',
+            'Latitud': 'latitude',
+            'Longitud': 'longitude',
+            'Ubicacion': 'city',
+            'Hora': 'time_str',
+            'Link_Ticketera': 'ticket_url',
+            'URL_Imagen': 'image_url'
         }
         
         df = df.rename(columns=column_mapping)
@@ -104,9 +122,27 @@ def read_excel_file(file_path: str) -> pd.DataFrame:
         for coord_col in ['latitude', 'longitude']:
             df[coord_col] = pd.to_numeric(df[coord_col], errors='coerce')
         
-        # Limpiar strings
+        # Limpiar strings (excluyendo date_str y time_str que se manejan por separado)
         for str_col in ['name', 'artist', 'venue', 'location', 'city', 'ticket_url', 'image_url']:
             df[str_col] = df[str_col].astype(str).str.strip()
+        
+        # Manejar específicamente la columna de hora
+        # Si la columna time_str es de tipo datetime.time, convertirla a string con formato HH:MM:SS
+        if df['time_str'].dtype == 'object' and hasattr(df['time_str'].iloc[0], 'strftime'):
+            # Es un objeto datetime.time, convertir a string
+            df['time_str'] = df['time_str'].apply(lambda x: x.strftime('%H:%M:%S') if pd.notna(x) else '')
+        else:
+            # Es un string, limpiarlo
+            df['time_str'] = df['time_str'].astype(str).str.strip()
+        
+        # Manejar específicamente la columna de fecha
+        # Si la columna date_str es de tipo datetime, convertirla a string
+        if df['date_str'].dtype == 'object' and hasattr(df['date_str'].iloc[0], 'strftime'):
+            # Es un objeto datetime, convertir a string con formato dd/mm/yyyy
+            df['date_str'] = df['date_str'].apply(lambda x: x.strftime('%d/%m/%Y') if pd.notna(x) else '')
+        else:
+            # Es un string, limpiarlo
+            df['date_str'] = df['date_str'].astype(str).str.strip()
         
         logger.info(f"Datos procesados. Filas válidas: {len(df)}")
         return df
@@ -114,6 +150,23 @@ def read_excel_file(file_path: str) -> pd.DataFrame:
     except Exception as e:
         logger.error(f"Error al leer el archivo Excel: {e}")
         return None
+
+def debug_dataframe(df: pd.DataFrame, max_rows: int = 5):
+    """Función de debug para mostrar información del DataFrame"""
+    logger.info("=== DEBUG: INFORMACIÓN DEL DATAFRAME ===")
+    logger.info(f"Columnas: {list(df.columns)}")
+    logger.info(f"Tipos de datos:")
+    for col in df.columns:
+        logger.info(f"  {col}: {df[col].dtype}")
+    
+    logger.info(f"\nPrimeras {max_rows} filas:")
+    for i in range(min(max_rows, len(df))):
+        row = df.iloc[i]
+        logger.info(f"Fila {i+1}:")
+        for col in df.columns:
+            value = row[col]
+            logger.info(f"  {col}: '{value}' (tipo: {type(value)})")
+        logger.info("")
 
 def combine_date_time(date_str: str, time_str: str) -> Optional[datetime]:
     """Combina fecha y hora en un objeto datetime"""
@@ -130,6 +183,9 @@ def combine_date_time(date_str: str, time_str: str) -> Optional[datetime]:
         # Convertir fecha a string si es necesario
         date_str = str(date_str).strip()
         time_str = str(time_str).strip()
+        
+        # Log para debug
+        logger.debug(f"Procesando fecha: '{date_str}', hora: '{time_str}'")
         
         # Si la hora no tiene segundos, agregarlos
         if len(time_str.split(':')) == 2:
@@ -149,7 +205,9 @@ def combine_date_time(date_str: str, time_str: str) -> Optional[datetime]:
             
             for fmt in datetime_formats:
                 try:
-                    return datetime.strptime(date_str, fmt)
+                    result = datetime.strptime(date_str, fmt)
+                    logger.debug(f"Fecha parseada como datetime completo: {result}")
+                    return result
                 except ValueError:
                     continue
         
@@ -169,6 +227,7 @@ def combine_date_time(date_str: str, time_str: str) -> Optional[datetime]:
         for fmt in date_formats:
             try:
                 parsed_date = datetime.strptime(date_str, fmt)
+                logger.debug(f"Fecha parseada: {parsed_date}")
                 break
             except ValueError:
                 continue
@@ -187,6 +246,7 @@ def combine_date_time(date_str: str, time_str: str) -> Optional[datetime]:
         for fmt in time_formats:
             try:
                 parsed_time = datetime.strptime(time_str, fmt)
+                logger.debug(f"Hora parseada: {parsed_time}")
                 break
             except ValueError:
                 continue
@@ -202,6 +262,7 @@ def combine_date_time(date_str: str, time_str: str) -> Optional[datetime]:
             second=parsed_time.second
         )
         
+        logger.debug(f"Fecha y hora combinadas: {combined_datetime}")
         return combined_datetime
         
     except Exception as e:
@@ -282,6 +343,9 @@ def import_events(file_path: str, skip_duplicates: bool = True) -> bool:
         logger.error("No se pudieron leer datos válidos del archivo Excel")
         return False
     
+    # Debug: mostrar información del DataFrame
+    debug_dataframe(df)
+    
     # Crear objetos EventCreate
     events_data = create_event_objects(df)
     if not events_data:
@@ -346,11 +410,19 @@ def import_events(file_path: str, skip_duplicates: bool = True) -> bool:
 
 def main():
     """Función principal del script"""
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
         print(__doc__)
+        print("\nOpciones adicionales:")
+        print("  --debug: Habilitar logging detallado para debug")
         sys.exit(1)
     
     file_path = sys.argv[1]
+    debug_mode = len(sys.argv) == 3 and sys.argv[2] == '--debug'
+    
+    # Configurar logging según el modo
+    if debug_mode:
+        logging.getLogger().setLevel(logging.DEBUG)
+        logger.info("Modo debug habilitado")
     
     # Verificar que el archivo existe
     if not os.path.exists(file_path):
