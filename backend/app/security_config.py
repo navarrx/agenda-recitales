@@ -8,7 +8,8 @@ from typing import List
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "http://localhost:8000"
+    "http://localhost:8000",
+    "http://localhost:8100"
 ]
 
 # Configuración de rate limiting
