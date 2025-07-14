@@ -1434,12 +1434,13 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             border-radius: 1.5rem 1.5rem 0 0;
             width: 100%;
             max-width: 500px;
-            max-height: 100vh;
+            max-height: calc(100vh - 90px);
             overflow-y: auto;
             overflow-x: hidden;
             position: relative;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
             animation: slideUp 0.3s ease;
+            margin-top: 90px;
           }
 
           @keyframes fadeIn {
@@ -2091,7 +2092,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
       <div className="embedded-agenda min-h-screen bg-[#101119]" style={{ width, fontFamily: 'Poppins, Inter, sans-serif', overflowX: 'hidden' }}>
         <div className="agenda-container">
-          <div className="mb-8 px-6" style={{ paddingTop: '88px' }}>
+          <div className="mb-8 px-6" style={{ paddingTop: '92px' }}>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
               Eventos y Recitales
             </h1>
@@ -2282,9 +2283,11 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                             onClick={() => handleEventClick(event)}
                           >
                             {event.image_url ? (
-                              <img src={event.image_url} alt={event.name} className="w-full h-[210px] object-cover" style={{borderRadius: 0, marginBottom: 0}} />
+                              <div className="w-full aspect-[5/7] overflow-hidden">
+                                <img src={event.image_url} alt={event.name} className="w-full h-full object-cover" style={{borderRadius: 0, marginBottom: 0}} />
+                              </div>
                             ) : (
-                              <div className="w-full h-[210px] flex items-center justify-center bg-[#1a48c4]" style={{borderRadius: 0, marginBottom: 0}}>
+                              <div className="w-full aspect-[5/7] flex items-center justify-center bg-[#1a48c4]" style={{borderRadius: 0, marginBottom: 0}}>
                                 <span className="text-white text-xl font-bold">{event.artist}</span>
                               </div>
                             )}
@@ -2368,9 +2371,11 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                               onClick={() => handleEventClick(event)}
                             >
                               {event.image_url ? (
-                                <img src={event.image_url} alt={event.name} className="w-full h-[210px] object-cover" style={{borderRadius: 0, marginBottom: 0}} />
+                                <div className="w-full aspect-[5/7] overflow-hidden">
+                                  <img src={event.image_url} alt={event.name} className="w-full h-full object-cover" style={{borderRadius: 0, marginBottom: 0}} />
+                                </div>
                               ) : (
-                                <div className="w-full h-[210px] flex items-center justify-center bg-[#1a48c4]" style={{borderRadius: 0, marginBottom: 0}}>
+                                <div className="w-full aspect-[5/7] flex items-center justify-center bg-[#1a48c4]" style={{borderRadius: 0, marginBottom: 0}}>
                                   <span className="text-white text-xl font-bold">{event.artist}</span>
                                 </div>
                               )}
@@ -2461,9 +2466,11 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                               onClick={() => handleEventClick(event)}
                             >
                               {event.image_url ? (
-                                <img src={event.image_url} alt={event.name} className="w-full h-[210px] object-cover" style={{borderRadius: 0, marginBottom: 0}} />
+                                <div className="w-full aspect-[5/7] overflow-hidden">
+                                  <img src={event.image_url} alt={event.name} className="w-full h-full object-cover" style={{borderRadius: 0, marginBottom: 0}} />
+                                </div>
                               ) : (
-                                <div className="w-full h-[210px] flex items-center justify-center bg-[#1a48c4]" style={{borderRadius: 0, marginBottom: 0}}>
+                                <div className="w-full aspect-[5/7] flex items-center justify-center bg-[#1a48c4]" style={{borderRadius: 0, marginBottom: 0}}>
                                   <span className="text-white text-xl font-bold">{event.artist}</span>
                                 </div>
                               )}
