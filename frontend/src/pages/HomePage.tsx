@@ -6,6 +6,7 @@ import { useEventStore } from '../store/eventStore';
 import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent } from 'framer-motion';
 import '../styles/HomePage.css';
 import EventCarousel from '../components/events/EventCarousel';
+import { Event } from '../types';
 
 const HomePage = () => {
   const location = useLocation();
@@ -14,6 +15,10 @@ const HomePage = () => {
   const containerRef = useRef(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  
+  // Estados para eventos destacados
+  const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(false);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -44,6 +49,44 @@ const HomePage = () => {
   const params = new URLSearchParams(location.search);
   const isAdmin = params.get('admin') === 'true';
   
+  // Cargar eventos destacados
+  useEffect(() => {
+    const fetchFeaturedEvents = async () => {
+      try {
+        setFeaturedLoading(true);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/events/featured?skip=0&limit=20`);
+        if (!response.ok) {
+          throw new Error('Error al cargar eventos destacados');
+        }
+        const data = await response.json();
+        if (!data || !data.items || !Array.isArray(data.items)) {
+          throw new Error('Formato de respuesta inválido para eventos destacados');
+        }
+        
+        // Filtrar eventos futuros
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const futureEvents = data.items.filter((event: Event) => {
+          const eventDate = new Date(event.date);
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate >= today;
+        });
+        
+        // Seleccionar 3 eventos aleatorios
+        const shuffled = futureEvents.sort(() => 0.5 - Math.random());
+        const selectedEvents = shuffled.slice(0, 3);
+        
+        setFeaturedEvents(selectedEvents);
+      } catch (err) {
+        console.error('Error fetching featured events:', err);
+      } finally {
+        setFeaturedLoading(false);
+      }
+    };
+
+    fetchFeaturedEvents();
+  }, []);
+  
   useEffect(() => {
     if (isAdmin) {
       navigate('/admin');
@@ -51,7 +94,6 @@ const HomePage = () => {
     fetchEvents();
   }, [isAdmin, navigate, fetchEvents]);
 
-  const featuredEvents = events.filter(event => event.is_featured).slice(0, 3);
   const upcomingEvents = events.filter(event => !event.is_featured).slice(0, 6);
 
   return (
@@ -244,7 +286,7 @@ const HomePage = () => {
               <div className="w-24 h-1 bg-[#1a48c4] mx-auto rounded-full" />
             </motion.div>
 
-            {loading ? (
+            {featuredLoading ? (
               <div className="flex justify-center items-center py-20">
                 <div className="animate-pulse-slow flex space-x-4">
                   <div className="flex-1 space-y-4 py-1">

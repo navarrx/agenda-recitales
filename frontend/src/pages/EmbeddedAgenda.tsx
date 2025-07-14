@@ -4,24 +4,16 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { es } from 'date-fns/locale';
 import { format } from 'date-fns';
+import { getEventPriceText, getTicketButtonText } from '../utils/eventUtils';
+import { Event } from '../types';
 
-interface Event {
-  id: number;
-  name: string;
-  artist: string;
-  genre: string;
-  date: string;
-  location: string;
-  city: string;
-  venue: string;
-  description: string;
-  image_url: string | null;
-  ticket_url: string | null;
-  is_featured: boolean;
-  latitude: number | null;
-  longitude: number | null;
-  ticket_price: number | null;
-}
+const EVENT_TYPES = [
+  { value: 'gratis', label: 'Gratis' },
+  { value: 'pago', label: 'Pago' },
+  { value: 'festival', label: 'Festival' },
+  { value: 'concierto', label: 'Concierto' },
+  { value: 'dj', label: 'DJ' },
+];
 
 interface EmbeddedAgendaProps {
   theme?: 'light' | 'dark';
@@ -95,6 +87,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const [selectedGenre, setSelectedGenre] = useState(initialFilters.genre || '');
   const [selectedCity, setSelectedCity] = useState(initialFilters.location || '');
   const [selectedDate, setSelectedDate] = useState<Date | null>(initialFilters.date ? new Date(initialFilters.date) : null);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [allGenres, setAllGenres] = useState<string[]>([]);
   const [allCities, setAllCities] = useState<string[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -117,6 +111,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const [showCitiesCard, setShowCitiesCard] = useState(false);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [showCitiesView, setShowCitiesView] = useState(false);
+  const [showTypesView, setShowTypesView] = useState(false);
+  const [showGenresView, setShowGenresView] = useState(false);
   const [showCalendarView, setShowCalendarView] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
@@ -125,6 +121,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const [tempSelectedCity, setTempSelectedCity] = useState(initialFilters.location || '');
   const [tempSelectedDate, setTempSelectedDate] = useState<Date | null>(initialFilters.date ? new Date(initialFilters.date) : null);
   const [tempSelectedCities, setTempSelectedCities] = useState<string[]>([]);
+  const [tempSelectedTypes, setTempSelectedTypes] = useState<string[]>([]);
+  const [tempSelectedGenres, setTempSelectedGenres] = useState<string[]>([]);
   
   // Estados para el orden de clasificación
   const [selectedSort, setSelectedSort] = useState<'asc' | 'desc'>('asc');
@@ -142,6 +140,31 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const [featuredSkip, setFeaturedSkip] = useState(0);
   const [isLoadingMoreFeatured, setIsLoadingMoreFeatured] = useState(false);
 
+  // Cargar géneros y ciudades disponibles
+  useEffect(() => {
+    const fetchGenresAndCities = async () => {
+      try {
+        // Cargar géneros
+        const genresResponse = await fetch(`${import.meta.env.VITE_API_URL}/events/filters/genres`);
+        if (genresResponse.ok) {
+          const genres = await genresResponse.json();
+          setAllGenres(genres);
+        }
+
+        // Cargar ciudades
+        const citiesResponse = await fetch(`${import.meta.env.VITE_API_URL}/events/filters/cities`);
+        if (citiesResponse.ok) {
+          const cities = await citiesResponse.json();
+          setAllCities(cities);
+        }
+      } catch (err) {
+        console.error('Error fetching genres and cities:', err);
+      }
+    };
+
+    fetchGenresAndCities();
+  }, []);
+
   // Reiniciar el input de búsqueda cada vez que se abre el modal
   useEffect(() => {
     if (isSearchModalOpen) {
@@ -157,11 +180,34 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         setLoading(true);
         const params = new URLSearchParams({
           skip: '0',
-          limit: ITEMS_PER_PAGE.toString(),
+          limit: (selectedGenre || selectedCity || selectedDate || selectedGenres.length > 0 || selectedCities.length > 0 || selectedTypes.length > 0 || searchTerm) ? '1000' : ITEMS_PER_PAGE.toString(),
           ...(selectedGenre && { genre: selectedGenre }),
-          ...(selectedCity && { city: selectedCity }),
+          ...(selectedCities.length > 0
+            ? {} // No incluir city si hay cities
+            : (selectedCity && { city: selectedCity })),
           ...(selectedDate && { date: selectedDate.toISOString().split('T')[0] })
         });
+
+        // Agregar géneros seleccionados como parámetros
+        if (selectedGenres.length > 0) {
+          selectedGenres.forEach(genre => {
+            params.append('genres', genre);
+          });
+        }
+
+        // Agregar tipos seleccionados como parámetros
+        if (selectedTypes.length > 0) {
+          selectedTypes.forEach(type => {
+            params.append('date_types', type);
+          });
+        }
+
+        // Agregar ciudades seleccionadas como parámetros
+        if (selectedCities.length > 0) {
+          selectedCities.forEach(city => {
+            params.append('cities', city);
+          });
+        }
 
         const response = await fetch(`${import.meta.env.VITE_API_URL}/events?${params}`);
         if (!response.ok) {
@@ -174,12 +220,6 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         
         setEvents(data.items);
         setHasMore(data.hasMore);
-        
-        // Extraer géneros y ciudades únicos
-        const genres = Array.from(new Set(data.items.map((event: Event) => event.genre))).filter((genre): genre is string => typeof genre === 'string');
-        const cities = Array.from(new Set(data.items.map((event: Event) => event.city))).filter((city): city is string => typeof city === 'string');
-        setAllGenres(genres);
-        setAllCities(cities);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error desconocido');
       } finally {
@@ -188,7 +228,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     };
 
     fetchEvents();
-  }, [selectedGenre, selectedCity, selectedDate]);
+  }, [selectedGenre, selectedCity, selectedDate, selectedGenres, selectedCities, selectedTypes]);
 
   // Cargar eventos destacados
   useEffect(() => {
@@ -321,7 +361,10 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     setSelectedCity('');
     setSelectedDate(null);
     setSelectedCities([]);
+    setSelectedTypes([]);
+    setSelectedGenres([]);
     setSearchTerm('');
+    setSelectedSort('asc');
     
     const newParams = new URLSearchParams();
     if (searchParams.get('theme')) {
@@ -348,6 +391,13 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         ...(selectedCity && { city: selectedCity }),
         ...(selectedDate && { date: selectedDate.toISOString().split('T')[0] })
       });
+
+      // Agregar géneros seleccionados como parámetros
+      if (selectedGenres.length > 0) {
+        selectedGenres.forEach(genre => {
+          params.append('genres', genre);
+        });
+      }
 
       console.log('Cargando más eventos con params:', params.toString());
       const response = await fetch(`${import.meta.env.VITE_API_URL}/events?${params}`);
@@ -376,7 +426,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     }
   };
 
-  const hasActiveFilters = selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || searchTerm;
+  const hasActiveFilters = selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || selectedTypes.length > 0 || selectedGenres.length > 0 || searchTerm;
 
   // FILTRO DE EVENTOS POR FECHA ACTUAL
   const today = new Date();
@@ -390,23 +440,68 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   });
 
   // Calcula los eventos que coinciden con los filtros aplicados
+  // Ordenamiento por precio: eventos gratis primero, luego por precio (asc/desc)
   const filteredResults = futureEvents
     .filter(event => {
       const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           event.artist.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesGenre = !selectedGenre || event.genre === selectedGenre;
+      const matchesGenres = selectedGenres.length === 0 || selectedGenres.includes(event.genre);
       const matchesCity = !selectedCity || event.city === selectedCity;
       const matchesCities = selectedCities.length === 0 || selectedCities.includes(event.city);
       const matchesDate = !selectedDate || new Date(event.date).toDateString() === selectedDate.toDateString();
       
-      return matchesSearch && matchesGenre && matchesCity && matchesCities && matchesDate;
+      // Filtrar por tipos de evento
+      const matchesTypes = selectedTypes.length === 0 || selectedTypes.some(type => {
+        if (type === 'gratis') return event.date_types?.includes('gratis') || false;
+        if (type === 'pago') return event.date_types?.includes('pago') || false;
+        if (type === 'festival') return event.date_types?.includes('festival') || false;
+        if (type === 'concierto') return event.date_types?.includes('concierto') || false;
+        if (type === 'dj') return event.date_types?.includes('dj') || false;
+        return false;
+      });
+      
+      return matchesSearch && matchesGenre && matchesGenres && matchesCity && matchesCities && matchesDate && matchesTypes;
     })
     .sort((a, b) => {
-      if (selectedSort === 'asc') {
+      // Obtener valores numéricos de precio para comparación
+      const priceA = a.ticket_price || 0;
+      const priceB = b.ticket_price || 0;
+      
+      // Determinar si los eventos son gratis basándose en date_types
+      const isFreeA = a.date_types?.includes('gratis') || false;
+      const isFreeB = b.date_types?.includes('gratis') || false;
+      const isPaidA = a.date_types?.includes('pago') || false;
+      const isPaidB = b.date_types?.includes('pago') || false;
+      
+      // Si ambos eventos son gratis, ordenar por fecha
+      if (isFreeA && isFreeB) {
         return new Date(a.date).getTime() - new Date(b.date).getTime();
-      } else {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
       }
+      
+      // Si uno es gratis y otro no, el gratis va primero
+      if (isFreeA && !isFreeB) return -1;
+      if (!isFreeA && isFreeB) return 1;
+      
+      // Si ambos tienen precio definido, ordenar por precio
+      if (priceA > 0 && priceB > 0) {
+        if (selectedSort === 'asc') {
+          return priceA - priceB; // Precio más bajo primero
+      } else {
+          return priceB - priceA; // Precio más alto primero
+        }
+      }
+      
+      // Si uno tiene precio y otro no, el que tiene precio va según el orden
+      if (priceA > 0 && priceB === 0) {
+        return selectedSort === 'asc' ? -1 : 1;
+      }
+      if (priceA === 0 && priceB > 0) {
+        return selectedSort === 'asc' ? 1 : -1;
+      }
+      
+      // Si ambos no tienen precio definido, ordenar por fecha
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
   const handleEventClick = (event: Event) => {
@@ -430,6 +525,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     setTempSelectedCity(selectedCity);
     setTempSelectedDate(selectedDate);
     setTempSelectedCities(selectedCities);
+    setTempSelectedTypes(selectedTypes);
+    setTempSelectedGenres(selectedGenres);
     setIsFiltersModalOpen(true);
   };
 
@@ -447,6 +544,22 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
   const hideCitiesInModal = () => {
     setShowCitiesView(false);
+  };
+
+  const showTypesInModal = () => {
+    setShowTypesView(true);
+  };
+
+  const hideTypesInModal = () => {
+    setShowTypesView(false);
+  };
+
+  const showGenresInModal = () => {
+    setShowGenresView(true);
+  };
+
+  const hideGenresInModal = () => {
+    setShowGenresView(false);
   };
 
   const showCalendarInModal = () => {
@@ -536,6 +649,33 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     setTempSelectedCities(prev => prev.filter(city => city !== cityToRemove));
   };
 
+  const toggleTypeSelection = (type: string) => {
+    setTempSelectedTypes(prev => {
+      if (prev.includes(type)) {
+        return prev.filter(t => t !== type);
+      } else {
+        // Exclusión lógica entre pago y gratis
+        if ((type === 'pago' && prev.includes('gratis')) || (type === 'gratis' && prev.includes('pago'))) {
+          return [type];
+        } else {
+          return [...prev, type];
+        }
+      }
+    });
+  };
+
+  const toggleGenreSelection = (genre: string) => {
+    setTempSelectedGenres(prev => 
+      prev.includes(genre) 
+        ? prev.filter(g => g !== genre)
+        : [...prev, genre]
+    );
+  };
+
+  const removeGenreFromSelection = (genreToRemove: string) => {
+    setTempSelectedGenres(prev => prev.filter(genre => genre !== genreToRemove));
+  };
+
   const applyFilters = () => {
     setIsAnimating(true);
     
@@ -544,6 +684,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     setSelectedCity(tempSelectedCity);
     setSelectedDate(tempSelectedDate);
     setSelectedCities(tempSelectedCities);
+    setSelectedTypes(tempSelectedTypes);
+    setSelectedGenres(tempSelectedGenres);
     
     // Solo mantener el parámetro theme si existe, sin agregar otros parámetros
     const newParams = new URLSearchParams();
@@ -588,6 +730,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     (selectedCity ? 1 : 0) +
     (selectedDate ? 1 : 0) +
     (selectedCities.length > 0 ? 1 : 0) +
+    (selectedTypes.length > 0 ? 1 : 0) +
+    (selectedGenres.length > 0 ? 1 : 0) +
     (searchTerm ? 1 : 0);
 
   // Filtrar eventos cercanos futuros
@@ -1982,7 +2126,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
 
           {/* Vista LISTA de eventos */}
           {viewMode === 'list' && (
-            <div className="white-section py-8 mb-0">
+            <div className="white-section py-8 mb-0" style={{ minHeight: '100vh' }}>
               <div className="px-4 md:px-8">
                 <h2 className="text-2xl md:text-3xl font-bold mb-1">Lista de Eventos y recitales</h2>
                 <p className="text-base md:text-lg text-[#101119]/70 mb-6">Los eventos en orden cronológico</p>
@@ -2029,7 +2173,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                           {/* Precio del ticket */}
                           <div className="flex items-center justify-center px-4">
                             <span className="text-m font text-[#101119]">
-                              {event.ticket_price ? `ARS$ ${event.ticket_price}` : 'GRATIS'}
+                              {getEventPriceText(event)}
                             </span>
                           </div>
                           {/* Flecha */}
@@ -2044,12 +2188,12 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                   )}
                   
                   {/* Botón Cargar más para modo lista */}
-                  {hasMore && (
-                    <div className="flex justify-center mt-6">
+                  {hasMore && filteredResults.length > 0 && (
+                    <div className="flex justify-end mt-6">
                       <button
                         onClick={handleLoadMore}
                         disabled={isLoadingMore}
-                        className="px-6 py-3 bg-[#1a48c4] text-white rounded-lg font-semibold hover:bg-[#153a9e] transition-colors disabled:opacity-50"
+                        className="text-black underline font-medium hover:no-underline transition-all disabled:opacity-50"
                       >
                         {isLoadingMore ? 'Cargando...' : 'Cargar más'}
                       </button>
@@ -2064,8 +2208,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
           {viewMode === 'gallery' && (
             <>
               {/* Sección de Resultados cuando hay filtros activos */}
-              {(selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || searchTerm) && (
-                <div className="white-section py-8">
+              {(selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || selectedTypes.length > 0 || selectedGenres.length > 0 || searchTerm) && (
+                <div className="white-section py-8" style={{ minHeight: '100vh' }}>
                   <div className="px-4 md:px-8">
                     <h2 className="text-2xl md:text-2xl font mb-8" style={{ fontFamily: 'Poppins, Inter, sans-serif' }}>
                       Resultados: {filteredResults.length}
@@ -2076,7 +2220,6 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       <div 
                         className="flex overflow-x-auto gap-4 pb-2" 
                         style={{scrollSnapType: 'x mandatory'}}
-                        onScroll={(e) => handleHorizontalScroll(e, handleLoadMore)}
                       >
                         {filteredResults.map((event, idx, arr) => (
                           <div
@@ -2131,22 +2274,12 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                                   style={{background: '#1752F9', textDecoration: 'none'}}
                                   onClick={e => e.stopPropagation()}
                                 >
-                                  Comprar entradas
+                                  {getTicketButtonText(event)}
                                 </a>
                               )}
                             </div>
                           </div>
                         ))}
-                        
-                        {/* Indicador de carga para resultados filtrados */}
-                        {isLoadingMore && (
-                          <div className="flex items-center justify-center w-[300px] min-w-[300px] h-[450px] bg-gray-100 rounded-lg">
-                            <div className="text-center">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a48c4] mx-auto mb-2"></div>
-                              <p className="text-sm text-gray-600">Cargando más eventos...</p>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -2154,7 +2287,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
               )}
 
               {/* Secciones Destacados y Cercanos a ti - solo cuando NO hay filtros activos */}
-              {!(selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || searchTerm) && (
+              {!(selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || selectedTypes.length > 0 || selectedGenres.length > 0 || searchTerm) && (
                 <>
                   <div className="white-section py-8">
                     <div className="px-4 md:px-8">
@@ -2227,7 +2360,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                                     style={{background: '#1752F9', textDecoration: 'none'}}
                                     onClick={e => e.stopPropagation()}
                                   >
-                                    Comprar entradas
+                                    {getTicketButtonText(event)}
                                   </a>
                                 )}
                               </div>
@@ -2320,12 +2453,12 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                                     style={{background: '#1752F9', textDecoration: 'none'}}
                                     onClick={e => e.stopPropagation()}
                                   >
-                                    Comprar entradas
+                                    {getTicketButtonText(event)}
                                   </a>
-                                                              )}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                         
                         {/* Indicador de carga para eventos cercanos */}
                         {isLoadingMoreNearby && (
@@ -2336,7 +2469,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                             </div>
                           </div>
                         )}
-                      </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -2351,7 +2484,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
       {isFiltersModalOpen && (
         <div className="filters-modal-overlay" onClick={closeFiltersModal}>
           <div className="filters-modal-content" onClick={(e) => e.stopPropagation()}>
-            {!showCitiesView && !showCalendarView ? (
+            {!showCitiesView && !showTypesView && !showGenresView && !showCalendarView ? (
               <>
                 <div className="filters-header">
                   <h3 className="filters-title">Filtros</h3>
@@ -2383,6 +2516,46 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                     </div>
                   )}
 
+                  {/* Tipos seleccionados */}
+                  {tempSelectedTypes.length > 0 && (
+                    <div className="selected-cities-section">
+                      <div className="selected-cities-grid">
+                        {tempSelectedTypes.map((type) => (
+                          <button
+                            key={type}
+                            className="selected-city-chip"
+                            onClick={() => toggleTypeSelection(type)}
+                          >
+                            <span className="selected-city-name">{EVENT_TYPES.find(t => t.value === type)?.label || type}</span>
+                            <svg className="selected-city-remove" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Géneros seleccionados */}
+                  {tempSelectedGenres.length > 0 && (
+                    <div className="selected-cities-section">
+                      <div className="selected-cities-grid">
+                        {tempSelectedGenres.map((genre) => (
+                          <button
+                            key={genre}
+                            className="selected-city-chip"
+                            onClick={() => removeGenreFromSelection(genre)}
+                          >
+                            <span className="selected-city-name">{genre}</span>
+                            <svg className="selected-city-remove" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="filter-section">
                     <h4 className="filter-section-title">Ciudad</h4>
                     <button 
@@ -2405,6 +2578,32 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       <span>{tempSelectedDate ? format(tempSelectedDate, "dd/MM/yyyy", { locale: es }) : "Seleccionar una fecha"}</span>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="filter-section">
+                    <h4 className="filter-section-title">Tipo</h4>
+                    <button 
+                      className="filter-dropdown"
+                      onClick={showTypesInModal}
+                    >
+                      <span>{tempSelectedTypes.length === 0 ? "Todos los tipos" : `${tempSelectedTypes.length} tipo${tempSelectedTypes.length > 1 ? 's' : ''} seleccionado${tempSelectedTypes.length > 1 ? 's' : ''}`}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m6 8 4 4 4-4" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="filter-section">
+                    <h4 className="filter-section-title">Géneros</h4>
+                    <button 
+                      className="filter-dropdown"
+                      onClick={showGenresInModal}
+                    >
+                      <span>{tempSelectedGenres.length === 0 ? "Todos los géneros" : `${tempSelectedGenres.length} género${tempSelectedGenres.length > 1 ? 's' : ''} seleccionado${tempSelectedGenres.length > 1 ? 's' : ''}`}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m6 8 4 4 4-4" />
                       </svg>
                     </button>
                   </div>
@@ -2461,10 +2660,109 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                     </button>
                     <button 
                       className="confirm-cities-button" 
-                      onClick={() => {
-                        applyFilters();
-                        hideCitiesInModal();
-                      }}
+                      onClick={hideCitiesInModal}
+                    >
+                      Confirmar
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : showTypesView ? (
+              <>
+                <div className="filters-header">
+                  <button className="back-button" onClick={hideTypesInModal}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                  </button>
+                  <h3 className="filters-title">Por tipo</h3>
+                  <button className="filters-close" onClick={closeFiltersModal}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="filters-body">
+                  <div className="cities-grid">
+                    {EVENT_TYPES.map((type) => (
+                      <button
+                        key={type.value}
+                        className={`city-button ${tempSelectedTypes.includes(type.value) ? 'city-button-selected' : ''}`}
+                        onClick={() => toggleTypeSelection(type.value)}
+                      >
+                        <span className="city-name">{type.label}</span>
+                        {tempSelectedTypes.includes(type.value) && (
+                          <svg className="city-check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="cities-card-actions">
+                    <button 
+                      className="clear-cities-button" 
+                      onClick={() => setTempSelectedTypes([])}
+                      disabled={tempSelectedTypes.length === 0}
+                    >
+                      Limpiar selección
+                    </button>
+                    <button 
+                      className="confirm-cities-button" 
+                      onClick={hideTypesInModal}
+                    >
+                      Confirmar
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : showGenresView ? (
+              <>
+                <div className="filters-header">
+                  <button className="back-button" onClick={hideGenresInModal}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                  </button>
+                  <h3 className="filters-title">Por género</h3>
+                  <button className="filters-close" onClick={closeFiltersModal}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="filters-body">
+                  <div className="cities-grid">
+                    {allGenres.map((genre) => (
+                      <button
+                        key={genre}
+                        className={`city-button ${tempSelectedGenres.includes(genre) ? 'city-button-selected' : ''}`}
+                        onClick={() => toggleGenreSelection(genre)}
+                      >
+                        <span className="city-name">{genre}</span>
+                        {tempSelectedGenres.includes(genre) && (
+                          <svg className="city-check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="cities-card-actions">
+                    <button 
+                      className="clear-cities-button" 
+                      onClick={() => setTempSelectedGenres([])}
+                      disabled={tempSelectedGenres.length === 0}
+                    >
+                      Limpiar selección
+                    </button>
+                    <button 
+                      className="confirm-cities-button" 
+                      onClick={hideGenresInModal}
                     >
                       Confirmar
                     </button>
@@ -2584,10 +2882,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                 </button>
                 <button 
                   className="confirm-cities-button" 
-                  onClick={() => {
-                    applyFilters();
-                    hideCitiesInModal();
-                  }}
+                  onClick={() => setShowCitiesCard(false)}
                 >
                   Confirmar
                 </button>
@@ -2602,7 +2897,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         <div className="filters-modal-overlay" onClick={closeSortModal}>
           <div className="filters-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="filters-header">
-              <h3 className="filters-title">Orden</h3>
+              <h3 className="filters-title">Ordenar por precio</h3>
               <button className="filters-close" onClick={closeSortModal}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -2617,7 +2912,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                     className={`sort-option-button ${tempSelectedSort === 'asc' ? 'sort-option-selected' : ''}`}
                     onClick={() => setTempSelectedSort('asc')}
                   >
-                    <span className="sort-option-name">Ascendente</span>
+                    <span className="sort-option-name">Menor precio primero</span>
                     {tempSelectedSort === 'asc' && (
                       <svg className="sort-option-check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -2628,7 +2923,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                     className={`sort-option-button ${tempSelectedSort === 'desc' ? 'sort-option-selected' : ''}`}
                     onClick={() => setTempSelectedSort('desc')}
                   >
-                    <span className="sort-option-name">Descendente</span>
+                    <span className="sort-option-name">Mayor precio primero</span>
                     {tempSelectedSort === 'desc' && (
                       <svg className="sort-option-check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -2763,7 +3058,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                   style={{background: '#1752F9', textDecoration: 'none'}}
                   onClick={e => e.stopPropagation()}
                 >
-                  Comprar entradas
+                  {getTicketButtonText(selectedEvent)}
                 </a>
               )}
             </div>

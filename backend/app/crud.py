@@ -9,6 +9,7 @@ def get_events(
     skip: int = 0,
     limit: int = 100,
     genre: Optional[str] = None,
+    genres: Optional[List[str]] = None,
     city: Optional[str] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
@@ -24,6 +25,8 @@ def get_events(
     # Apply filters
     if genre:
         query = query.filter(models.Event.genre == genre)
+    if genres:
+        query = query.filter(models.Event.genre.in_(genres))
     if city:
         query = query.filter(models.Event.city == city)
     if date_from:
@@ -140,7 +143,14 @@ def get_nearby_events(
     lng: float,
     radius: float = 50,  # km
     skip: int = 0,
-    limit: int = 12
+    limit: int = 12,
+    genre: Optional[str] = None,
+    genres: Optional[List[str]] = None,
+    city: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    search: Optional[str] = None,
+    date_types: Optional[List[str]] = None
 ):
     """
     Get events within a certain radius of given coordinates using Haversine formula
@@ -164,7 +174,33 @@ def get_nearby_events(
         models.Event.longitude.isnot(None),
         func.date(models.Event.date) >= today,
         distance_expr <= radius
-    ).order_by('distance')
+    )
+
+    # Apply additional filters
+    if genre:
+        query = query.filter(models.Event.genre == genre)
+    if genres:
+        query = query.filter(models.Event.genre.in_(genres))
+    if city:
+        query = query.filter(models.Event.city == city)
+    if date_from:
+        query = query.filter(func.date(models.Event.date) >= date_from)
+    if date_to:
+        query = query.filter(func.date(models.Event.date) <= date_to)
+    if search:
+        if len(search) > 100:
+            search = search[:100]
+        
+        search_filter = or_(
+            models.Event.name.ilike(f"%{search}%"),
+            models.Event.artist.ilike(f"%{search}%"),
+            models.Event.description.ilike(f"%{search}%")
+        )
+        query = query.filter(search_filter)
+    if date_types:
+        query = query.filter(models.Event.date_types.contains(date_types))
+
+    query = query.order_by('distance')
     
     # Count total results
     total = query.count()
