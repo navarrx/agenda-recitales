@@ -57,15 +57,42 @@
         <input type="text" id="genreInput" placeholder="Género" onchange="updateIframe()">
     </div>
 
+    <!-- Herramienta de testeo para event_id -->
+    <div style="margin: 2rem 0; padding: 1rem; background: #f5f5f5; border-radius: 8px; max-width: 600px;">
+        <h3>Test embed with event_id</h3>
+        <label for="eventIdInput">Event ID:</label>
+        <input type="text" id="eventIdInput" style="margin: 0 1rem 0 0; padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid #ccc;" />
+        <button onclick="reloadWithEventId()" style="padding: 0.25rem 1rem; border-radius: 4px; background: #1752F9; color: #fff; border: none;">Load Event</button>
+        <button onclick="reloadWithoutEventId()" style="padding: 0.25rem 1rem; border-radius: 4px; background: #aaa; color: #fff; border: none; margin-left: 0.5rem;">Clear</button>
+        <script>
+            function reloadWithEventId() {
+                const id = document.getElementById('eventIdInput').value.trim();
+                const iframe = document.getElementById('agendaFrame'); // Changed from 'agenda-embed' to 'agendaFrame'
+                if (id) {
+                    const url = new URL(iframe.src);
+                    url.searchParams.set('event_id', id);
+                    iframe.src = url.toString();
+                }
+            }
+            function reloadWithoutEventId() {
+                const iframe = document.getElementById('agendaFrame'); // Changed from 'agenda-embed' to 'agendaFrame'
+                const url = new URL(iframe.src);
+                url.searchParams.delete('event_id');
+                iframe.src = url.toString();
+                document.getElementById('eventIdInput').value = '';
+            }
+        </script>
+    </div>
+
     <div class="container">
         <h2>Agenda Embebida:</h2>
         <iframe 
             id="agendaFrame"
-            src="https://agenda-recitales-production.up.railway.app/embed"
+            src="http://localhost:3000/embed"
             width="100%" 
             height="600px" 
             frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; geolocation"
             allowfullscreen
         ></iframe>
     </div>
@@ -82,7 +109,7 @@
             const city = document.getElementById('cityInput').value;
             const genre = document.getElementById('genreInput').value;
 
-            let url = 'https://agenda-recitales-production.up.railway.app/embed?';
+            let url = 'http://localhost:3000/embed?';
             const params = new URLSearchParams();
             
             if (theme) params.append('theme', theme);
@@ -111,7 +138,7 @@
 
         // Manejar errores del iframe
         window.addEventListener('message', function(event) {
-            if (event.origin === 'https://agenda-recitales-production.up.railway.app') {
+            if (event.origin === 'http://localhost:3000') {
                 console.log('Mensaje recibido del iframe:', event.data);
             }
         });

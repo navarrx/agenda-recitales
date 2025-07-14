@@ -782,6 +782,50 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     }
   };
 
+  const [autoOpenEventId, setAutoOpenEventId] = useState<string | null>(null);
+  const [autoOpenLoading, setAutoOpenLoading] = useState(false);
+  const [autoOpenError, setAutoOpenError] = useState<string | null>(null);
+
+  // Detectar event_id en la URL y abrir el modal automáticamente
+  useEffect(() => {
+    const eventIdParam = searchParams.get('event_id');
+    if (eventIdParam) {
+      setAutoOpenEventId(eventIdParam);
+    }
+  }, [searchParams]);
+
+  // Si hay un event_id, buscar el evento y abrir el modal
+  useEffect(() => {
+    if (!autoOpenEventId) return;
+    // Buscar primero en los eventos cargados
+    const found = events.find(e => String(e.id) === String(autoOpenEventId));
+    if (found) {
+      setSelectedEvent(found);
+      setIsModalOpen(true);
+      setAutoOpenEventId(null); // Solo abrir una vez
+      return;
+    }
+    // Si no está, buscar en el backend
+    setAutoOpenLoading(true);
+    setAutoOpenError(null);
+    fetch(`${import.meta.env.VITE_API_URL}/events/${autoOpenEventId}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Event not found');
+        return res.json();
+      })
+      .then(data => {
+        setSelectedEvent(data);
+        setIsModalOpen(true);
+      })
+      .catch(err => {
+        setAutoOpenError('No se pudo cargar el evento solicitado.');
+      })
+      .finally(() => {
+        setAutoOpenLoading(false);
+        setAutoOpenEventId(null);
+      });
+  }, [autoOpenEventId, events]);
+
   return (
     <>
       <style>
