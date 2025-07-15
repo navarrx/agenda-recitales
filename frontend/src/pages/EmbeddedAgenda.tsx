@@ -87,6 +87,10 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const [selectedGenre, setSelectedGenre] = useState(initialFilters.genre || '');
   const [selectedCity, setSelectedCity] = useState(initialFilters.location || '');
   const [selectedDate, setSelectedDate] = useState<Date | null>(initialFilters.date ? new Date(initialFilters.date) : null);
+  const [selectedDateRange, setSelectedDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: initialFilters.date ? new Date(initialFilters.date) : null,
+    end: null
+  });
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [allGenres, setAllGenres] = useState<string[]>([]);
@@ -120,6 +124,10 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const [tempSelectedGenre, setTempSelectedGenre] = useState(initialFilters.genre || '');
   const [tempSelectedCity, setTempSelectedCity] = useState(initialFilters.location || '');
   const [tempSelectedDate, setTempSelectedDate] = useState<Date | null>(initialFilters.date ? new Date(initialFilters.date) : null);
+  const [tempSelectedDateRange, setTempSelectedDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: initialFilters.date ? new Date(initialFilters.date) : null,
+    end: null
+  });
   const [tempSelectedCities, setTempSelectedCities] = useState<string[]>([]);
   const [tempSelectedTypes, setTempSelectedTypes] = useState<string[]>([]);
   const [tempSelectedGenres, setTempSelectedGenres] = useState<string[]>([]);
@@ -180,12 +188,13 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         setLoading(true);
         const params = new URLSearchParams({
           skip: '0',
-          limit: (selectedGenre || selectedCity || selectedDate || selectedGenres.length > 0 || selectedCities.length > 0 || selectedTypes.length > 0 || searchTerm) ? '1000' : ITEMS_PER_PAGE.toString(),
+          limit: (selectedGenre || selectedCity || selectedDate || selectedDateRange.start || selectedGenres.length > 0 || selectedCities.length > 0 || selectedTypes.length > 0 || searchTerm) ? '1000' : ITEMS_PER_PAGE.toString(),
           ...(selectedGenre && { genre: selectedGenre }),
           ...(selectedCities.length > 0
             ? {} // No incluir city si hay cities
             : (selectedCity && { city: selectedCity })),
-          ...(selectedDate && { date: selectedDate.toISOString().split('T')[0] })
+          ...(selectedDateRange.start && { date: selectedDateRange.start.toISOString().split('T')[0] }),
+          ...(selectedDateRange.end && { end_date: selectedDateRange.end.toISOString().split('T')[0] })
         });
 
         // Agregar géneros seleccionados como parámetros
@@ -228,7 +237,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     };
 
     fetchEvents();
-  }, [selectedGenre, selectedCity, selectedDate, selectedGenres, selectedCities, selectedTypes]);
+  }, [selectedGenre, selectedCity, selectedDate, selectedDateRange, selectedGenres, selectedCities, selectedTypes]);
 
   // Cargar eventos destacados
   useEffect(() => {
@@ -360,6 +369,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     setSelectedGenre('');
     setSelectedCity('');
     setSelectedDate(null);
+    setSelectedDateRange({ start: null, end: null });
     setSelectedCities([]);
     setSelectedTypes([]);
     setSelectedGenres([]);
@@ -389,7 +399,8 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
         limit: ITEMS_PER_PAGE.toString(),
         ...(selectedGenre && { genre: selectedGenre }),
         ...(selectedCity && { city: selectedCity }),
-        ...(selectedDate && { date: selectedDate.toISOString().split('T')[0] })
+        ...(selectedDateRange.start && { date: selectedDateRange.start.toISOString().split('T')[0] }),
+        ...(selectedDateRange.end && { end_date: selectedDateRange.end.toISOString().split('T')[0] })
       });
 
       // Agregar géneros seleccionados como parámetros
@@ -426,7 +437,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     }
   };
 
-  const hasActiveFilters = selectedGenre || selectedCity || selectedDate || selectedCities.length > 0 || selectedTypes.length > 0 || selectedGenres.length > 0 || searchTerm;
+  const hasActiveFilters = selectedGenre || selectedCity || selectedDate || selectedDateRange.start || selectedCities.length > 0 || selectedTypes.length > 0 || selectedGenres.length > 0 || searchTerm;
 
   // FILTRO DE EVENTOS POR FECHA ACTUAL
   const today = new Date();
@@ -449,7 +460,23 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
       const matchesGenres = selectedGenres.length === 0 || selectedGenres.includes(event.genre);
       const matchesCity = !selectedCity || event.city === selectedCity;
       const matchesCities = selectedCities.length === 0 || selectedCities.includes(event.city);
-      const matchesDate = !selectedDate || new Date(event.date).toDateString() === selectedDate.toDateString();
+      const matchesDate = !selectedDateRange.start || (() => {
+        const eventDate = new Date(event.date);
+        eventDate.setHours(0, 0, 0, 0);
+        
+        const startDate = new Date(selectedDateRange.start);
+        startDate.setHours(0, 0, 0, 0);
+        
+        if (!selectedDateRange.end) {
+          // Si solo hay fecha de inicio, comparar con esa fecha
+          return eventDate.getTime() === startDate.getTime();
+        }
+        
+        const endDate = new Date(selectedDateRange.end);
+        endDate.setHours(0, 0, 0, 0);
+        
+        return eventDate >= startDate && eventDate <= endDate;
+      })();
       
       // Filtrar por tipos de evento
       const matchesTypes = selectedTypes.length === 0 || selectedTypes.some(type => {
@@ -524,6 +551,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     setTempSelectedGenre(selectedGenre);
     setTempSelectedCity(selectedCity);
     setTempSelectedDate(selectedDate);
+    setTempSelectedDateRange(selectedDateRange);
     setTempSelectedCities(selectedCities);
     setTempSelectedTypes(selectedTypes);
     setTempSelectedGenres(selectedGenres);
@@ -587,16 +615,89 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   };
 
   const selectDate = (date: Date) => {
-    if (tempSelectedDate && 
-        date.getDate() === tempSelectedDate.getDate() &&
-        date.getMonth() === tempSelectedDate.getMonth() &&
-        date.getFullYear() === tempSelectedDate.getFullYear()) {
-      // Si se hace clic en la fecha ya seleccionada, la deselecciona
-      setTempSelectedDate(null);
-    } else {
-      // Si se hace clic en una fecha diferente, la selecciona
+    // Si no hay fecha de inicio seleccionada, establecer esta como inicio
+    if (!tempSelectedDateRange.start) {
+      setTempSelectedDateRange({
+        start: date,
+        end: null
+      });
+      setTempSelectedDate(date);
+    } 
+    // Si hay fecha de inicio pero no de fin, establecer esta como fin
+    else if (tempSelectedDateRange.start && !tempSelectedDateRange.end) {
+      const start = tempSelectedDateRange.start;
+      const end = date;
+      
+      // Si la fecha seleccionada es anterior a la de inicio, intercambiar
+      if (end < start) {
+        setTempSelectedDateRange({
+          start: end,
+          end: start
+        });
+        setTempSelectedDate(end);
+      } else {
+        setTempSelectedDateRange({
+          start: start,
+          end: end
+        });
+        setTempSelectedDate(end);
+      }
+    } 
+    // Si ya hay un rango completo, reiniciar con la nueva fecha
+    else {
+      setTempSelectedDateRange({
+        start: date,
+        end: null
+      });
       setTempSelectedDate(date);
     }
+  };
+
+  // Función auxiliar para verificar si una fecha está en el rango seleccionado
+  const isDateInRange = (date: Date) => {
+    if (!tempSelectedDateRange.start) return false;
+    
+    const dateToCheck = new Date(date);
+    dateToCheck.setHours(0, 0, 0, 0);
+    
+    const start = new Date(tempSelectedDateRange.start);
+    start.setHours(0, 0, 0, 0);
+    
+    if (!tempSelectedDateRange.end) {
+      // Si solo hay fecha de inicio, solo esa fecha está seleccionada
+      return dateToCheck.getTime() === start.getTime();
+    }
+    
+    const end = new Date(tempSelectedDateRange.end);
+    end.setHours(0, 0, 0, 0);
+    
+    return dateToCheck >= start && dateToCheck <= end;
+  };
+
+  // Función auxiliar para verificar si una fecha es el inicio del rango
+  const isDateRangeStart = (date: Date) => {
+    if (!tempSelectedDateRange.start) return false;
+    
+    const dateToCheck = new Date(date);
+    dateToCheck.setHours(0, 0, 0, 0);
+    
+    const start = new Date(tempSelectedDateRange.start);
+    start.setHours(0, 0, 0, 0);
+    
+    return dateToCheck.getTime() === start.getTime();
+  };
+
+  // Función auxiliar para verificar si una fecha es el fin del rango
+  const isDateRangeEnd = (date: Date) => {
+    if (!tempSelectedDateRange.end) return false;
+    
+    const dateToCheck = new Date(date);
+    dateToCheck.setHours(0, 0, 0, 0);
+    
+    const end = new Date(tempSelectedDateRange.end);
+    end.setHours(0, 0, 0, 0);
+    
+    return dateToCheck.getTime() === end.getTime();
   };
 
   const getCalendarDays = () => {
@@ -683,6 +784,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
     setSelectedGenre(tempSelectedGenre);
     setSelectedCity(tempSelectedCity);
     setSelectedDate(tempSelectedDate);
+    setSelectedDateRange(tempSelectedDateRange);
     setSelectedCities(tempSelectedCities);
     setSelectedTypes(tempSelectedTypes);
     setSelectedGenres(tempSelectedGenres);
@@ -728,7 +830,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
   const activeFiltersCount =
     (selectedGenre ? 1 : 0) +
     (selectedCity ? 1 : 0) +
-    (selectedDate ? 1 : 0) +
+    (selectedDate || selectedDateRange.start ? 1 : 0) +
     (selectedCities.length > 0 ? 1 : 0) +
     (selectedTypes.length > 0 ? 1 : 0) +
     (selectedGenres.length > 0 ? 1 : 0) +
@@ -1937,6 +2039,67 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
             border: 2px solid #1a48c4;
           }
 
+          /* Estilos para el rango de fechas */
+          .calendar-day.in-range {
+            background: linear-gradient(90deg, rgba(26, 72, 196, 0.2), rgba(26, 72, 196, 0.15));
+            color: #ffffff;
+            border-radius: 0;
+            position: relative;
+            z-index: 1;
+          }
+
+          .calendar-day.range-start {
+            background: linear-gradient(135deg, #1a48c4, #153a9e);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 0.5rem 0 0 0.5rem;
+            position: relative;
+            z-index: 3;
+            box-shadow: 0 2px 8px rgba(26, 72, 196, 0.3);
+            font-weight: 600;
+          }
+
+          .calendar-day.range-end {
+            background: linear-gradient(135deg, #1a48c4, #153a9e);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 0 0.5rem 0.5rem 0;
+            position: relative;
+            z-index: 3;
+            box-shadow: 0 2px 8px rgba(26, 72, 196, 0.3);
+            font-weight: 600;
+          }
+
+          .calendar-day.range-start.range-end {
+            border-radius: 0.5rem;
+          }
+
+          /* Efecto de conexión entre fechas del rango */
+          .calendar-day.in-range::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, rgba(26, 72, 196, 0.1), rgba(26, 72, 196, 0.05));
+            z-index: 1;
+          }
+
+          /* Indicador visual del rango seleccionado */
+          .calendar-day.in-range:hover {
+            background: linear-gradient(90deg, rgba(26, 72, 196, 0.3), rgba(26, 72, 196, 0.25));
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(26, 72, 196, 0.2);
+          }
+
+          .calendar-day.range-start:hover,
+          .calendar-day.range-end:hover {
+            background: linear-gradient(135deg, #1a48c4, #0f2d7a);
+            transform: scale(1.1);
+            box-shadow: 0 4px 16px rgba(26, 72, 196, 0.4);
+          }
+
           .calendar-actions {
             display: flex;
             gap: 1rem;
@@ -2234,7 +2397,7 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                   
                   {/* Botón Cargar más para modo lista */}
                   {hasMore && filteredResults.length > 0 && (
-                    <div className="flex justify-end mt-6">
+                    <div className="flex justify-start mt-6">
                       <button
                         onClick={handleLoadMore}
                         disabled={isLoadingMore}
@@ -2626,7 +2789,14 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       className="filter-dropdown"
                       onClick={showCalendarInModal}
                     >
-                      <span>{tempSelectedDate ? format(tempSelectedDate, "dd/MM/yyyy", { locale: es }) : "Seleccionar una fecha"}</span>
+                      <span>
+                        {tempSelectedDateRange.start && tempSelectedDateRange.end 
+                          ? `${format(tempSelectedDateRange.start, "dd/MM/yyyy", { locale: es })} - ${format(tempSelectedDateRange.end, "dd/MM/yyyy", { locale: es })}`
+                          : tempSelectedDateRange.start 
+                            ? format(tempSelectedDateRange.start, "dd/MM/yyyy", { locale: es })
+                            : "Seleccionar una fecha"
+                        }
+                      </span>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 11.25v7.5" />
                       </svg>
@@ -2840,6 +3010,24 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                       </button>
                     </div>
                     
+                    {/* Indicador del rango seleccionado */}
+                    {tempSelectedDateRange.start && (
+                      <div className="mb-4 p-3 bg-[#1a48c4]/10 border border-[#1a48c4]/20 rounded-lg">
+                        <p className="text-sm text-white font-medium">
+                          {tempSelectedDateRange.end 
+                            ? `Rango seleccionado: ${format(tempSelectedDateRange.start, "dd/MM/yyyy", { locale: es })} - ${format(tempSelectedDateRange.end, "dd/MM/yyyy", { locale: es })}`
+                            : `Fecha seleccionada: ${format(tempSelectedDateRange.start, "dd/MM/yyyy", { locale: es })}`
+                          }
+                        </p>
+                        <p className="text-xs text-white/70 mt-1">
+                          {tempSelectedDateRange.end 
+                            ? "Haz clic en otra fecha para cambiar el rango"
+                            : "Haz clic en otra fecha para completar el rango"
+                          }
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="calendar-weekdays">
                       {["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"].map((day) => (
                         <div key={day} className="weekday-header">{day}</div>
@@ -2847,24 +3035,30 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                     </div>
                     
                     <div className="calendar-grid">
-                      {getCalendarDays().map((day, index) => (
-                        <button
-                          key={index}
-                          className={`calendar-day ${
-                            !day.isCurrentMonth ? 'other-month' : ''
-                          } ${
-                            tempSelectedDate && 
-                            day.date.getDate() === tempSelectedDate.getDate() &&
-                            day.date.getMonth() === tempSelectedDate.getMonth() &&
-                            day.date.getFullYear() === tempSelectedDate.getFullYear()
-                              ? 'selected-day' : ''
-                          }`}
-                          onClick={() => day.isCurrentMonth && selectDate(day.date)}
-                          disabled={!day.isCurrentMonth}
-                        >
-                          {day.date.getDate()}
-                        </button>
-                      ))}
+                      {getCalendarDays().map((day, index) => {
+                        const isInRange = isDateInRange(day.date);
+                        const isRangeStart = isDateRangeStart(day.date);
+                        const isRangeEnd = isDateRangeEnd(day.date);
+                        
+                        return (
+                          <button
+                            key={index}
+                            className={`calendar-day ${
+                              !day.isCurrentMonth ? 'other-month' : ''
+                            } ${
+                              isInRange ? 'in-range' : ''
+                            } ${
+                              isRangeStart ? 'range-start' : ''
+                            } ${
+                              isRangeEnd ? 'range-end' : ''
+                            }`}
+                            onClick={() => day.isCurrentMonth && selectDate(day.date)}
+                            disabled={!day.isCurrentMonth}
+                          >
+                            {day.date.getDate()}
+                          </button>
+                        );
+                      })}
                     </div>
                     
                     <div className="calendar-actions">
@@ -2872,16 +3066,17 @@ const EmbeddedAgenda: React.FC<EmbeddedAgendaProps> = ({
                         className="cancel-date-button" 
                         onClick={() => {
                           setTempSelectedDate(null);
+                          setTempSelectedDateRange({ start: null, end: null });
                           hideCalendarInModal();
                         }}
                       >
-                        Cancel
+                        Limpiar
                       </button>
                       <button 
                         className="select-date-button" 
                         onClick={hideCalendarInModal}
                       >
-                        Seleccionar
+                        Confirmar
                       </button>
                     </div>
                   </div>

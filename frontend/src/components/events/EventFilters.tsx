@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { EventFilters as FilterTypes } from '../../types';
 import { useEventStore } from '../../store/eventStore';
-import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
-import { es } from 'date-fns/locale';
+import Calendar from '../Calendar';
 import { format as formatDate } from 'date-fns';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import { DollarSign, Ticket, Music, Mic, Disc3, X } from 'lucide-react';
-import { sanitizeText, sanitizeSearchText, validateLength } from '../../utils/security';
+import { sanitizeSearchText, validateLength } from '../../utils/security';
 
 interface EventFiltersProps {
   onFilterChange: (filters: FilterTypes) => void;
@@ -27,6 +25,11 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
   const { filters: globalFilters, resetFilters, genres, fetchGenres } = useEventStore();
   const [filters, setFilters] = useState<FilterTypes>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDateRange, setSelectedDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  });
+  const [showCalendar, setShowCalendar] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
@@ -34,6 +37,7 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
   // 1. Estado para mostrar/ocultar el dropdown de género
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const genreDropdownRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchGenres();
@@ -50,9 +54,20 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
     if (globalFilters?.dateFrom && globalFilters?.dateTo && globalFilters.dateFrom === globalFilters.dateTo) {
       // Corregir desfase de zona horaria: crear Date local a partir de YYYY-MM-DD
       const [year, month, day] = globalFilters.dateFrom.split('-');
-      setSelectedDate(new Date(Number(year), Number(month) - 1, Number(day)));
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      setSelectedDate(date);
+      setSelectedDateRange({ start: date, end: null });
+    } else if (globalFilters?.dateFrom && globalFilters?.dateTo) {
+      // Rango de fechas
+      const [startYear, startMonth, startDay] = globalFilters.dateFrom.split('-');
+      const [endYear, endMonth, endDay] = globalFilters.dateTo.split('-');
+      const startDate = new Date(Number(startYear), Number(startMonth) - 1, Number(startDay));
+      const endDate = new Date(Number(endYear), Number(endMonth) - 1, Number(endDay));
+      setSelectedDate(startDate);
+      setSelectedDateRange({ start: startDate, end: endDate });
     } else {
       setSelectedDate(null);
+      setSelectedDateRange({ start: null, end: null });
     }
   }, [globalFilters]);
   
@@ -79,6 +94,18 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showGenreDropdown]);
+
+  // 3. Cerrar dropdown del calendario al hacer click fuera
+  useEffect(() => {
+    if (!showCalendar) return;
+    function handleClick(e: MouseEvent) {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setShowCalendar(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showCalendar]);
 
   // ToggleGroup handler
   const handleDateTypesChange = (values: string[]) => {
@@ -126,24 +153,60 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
     onFilterChange(newFilters);
   };
 
+  // Handlers para el nuevo calendario
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+  };
+
+  const handleDateRangeChange = (range: { start: Date | null; end: Date | null }) => {
+    setSelectedDateRange(range);
+  };
+
   const handleDateChange = (date: Date | null) => {
     setSelectedDate(date);
+  };
+
+  const handleCalendarCancel = () => {
+    setSelectedDate(null);
+    setSelectedDateRange({ start: null, end: null });
+    setShowCalendar(false);
+    
+    // Limpiar filtros de fecha
     const newFilters = { ...filters };
-    if (date) {
-      const formatted = formatDate(date, 'yyyy-MM-dd');
-      newFilters.dateFrom = formatted;
-      newFilters.dateTo = formatted;
-    } else {
-      delete newFilters.dateFrom;
-      delete newFilters.dateTo;
-    }
-    console.log('[DatePicker] handleDateChange:', { date, newFilters });
+    delete newFilters.dateFrom;
+    delete newFilters.dateTo;
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
 
+  const handleCalendarConfirm = () => {
+    const newFilters = { ...filters };
+    
+    if (selectedDateRange.start) {
+      const startDate = formatDate(selectedDateRange.start, 'yyyy-MM-dd');
+      newFilters.dateFrom = startDate;
+      
+      if (selectedDateRange.end) {
+        const endDate = formatDate(selectedDateRange.end, 'yyyy-MM-dd');
+        newFilters.dateTo = endDate;
+      } else {
+        // Si solo hay fecha de inicio, usar la misma como fecha final
+        newFilters.dateTo = startDate;
+      }
+    } else {
+      // Limpiar filtros de fecha si no hay selección
+      delete newFilters.dateFrom;
+      delete newFilters.dateTo;
+    }
+    
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+    setShowCalendar(false);
+  };
+
   const handleClearFilters = () => {
     setSelectedDate(null);
+    setSelectedDateRange({ start: null, end: null });
     setFilters({});
     setSearchError(null);
     resetFilters();
@@ -160,8 +223,62 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
     );
   };
 
+  // Función para obtener el texto del botón de fecha
+  const getDateButtonText = () => {
+    if (selectedDateRange.start && selectedDateRange.end) {
+      if (selectedDateRange.start.getTime() === selectedDateRange.end.getTime()) {
+        return selectedDateRange.start.toLocaleDateString('es-ES', { 
+          day: 'numeric', 
+          month: 'numeric', 
+          year: 'numeric' 
+        });
+      } else {
+        const startDate = selectedDateRange.start.toLocaleDateString('es-ES', { 
+          day: 'numeric', 
+          month: 'numeric', 
+          year: 'numeric' 
+        });
+        const endDate = selectedDateRange.end.toLocaleDateString('es-ES', { 
+          day: 'numeric', 
+          month: 'numeric', 
+          year: 'numeric' 
+        });
+        return `${startDate} - ${endDate}`;
+      }
+    } else if (selectedDateRange.start) {
+      return selectedDateRange.start.toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'numeric', 
+        year: 'numeric' 
+      });
+    }
+    return 'Seleccionar';
+  };
+
   return (
     <div className="mb-6">
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          
+          @keyframes fadeInCalendar {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          
+          .animate-fade-in {
+            animation: fadeIn 0.2s ease-out;
+          }
+          
+          .animate-fade-in-calendar {
+            animation: fadeInCalendar 0.3s ease-out;
+          }
+        `}
+      </style>
+      
       {/* Filtros principales - reorganizados para móviles */}
       <div className="flex flex-col gap-3 w-full">
         {/* Primera fila: Filtros y selector de vista */}
@@ -248,31 +365,55 @@ const EventFilters = ({ onFilterChange, viewMode, onViewModeChange }: EventFilte
                 </ToggleGroup.Root>
               </div>
             </div>
-            {/* Fecha */}
-            <div className="w-[90px] md:w-36">
+            {/* Fecha - Nuevo calendario */}
+            <div className="w-[90px] md:w-36 relative">
               <label className="block text-sm font-medium text-white/80 mb-1">Fecha</label>
-              <DatePicker
-                selected={selectedDate}
-                onChange={handleDateChange}
-                locale={es}
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Seleccionar"
-                minDate={new Date()}
-                className="w-full"
-                customInput={
-                  <button
-                    className="w-[90px] px-2 py-1.5 bg-[#101119] border border-white/20 rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white text-xs font-medium flex items-center justify-between gap-2 text-left hover:border-[#1a48c4] transition-colors md:w-full md:px-3 md:py-2 md:text-sm md:gap-4"
-                    type="button"
+              <button
+                onClick={() => setShowCalendar(!showCalendar)}
+                className="w-[90px] px-2 py-1.5 bg-[#101119] border border-white/20 rounded-md shadow-sm focus:outline-none focus:ring-[#1a48c4] focus:border-[#1a48c4] text-white text-xs font-medium flex items-center justify-between gap-2 text-left hover:border-[#1a48c4] transition-colors md:w-full md:px-3 md:py-2 md:text-sm md:gap-4"
+                type="button"
+              >
+                <span className={`${selectedDateRange.start ? '' : 'text-white/50'} truncate whitespace-nowrap overflow-hidden flex-1`}>
+                  {getDateButtonText()}
+                </span>
+                <svg 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                  className={`transition-transform duration-200 flex-shrink-0 ${showCalendar ? 'rotate-180' : ''}`}
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+              
+              {/* Dropdown del calendario */}
+              {showCalendar && (
+                <>
+                  {/* Overlay para móviles */}
+                  <div 
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    onClick={handleCalendarCancel}
+                  />
+                  {/* Calendario */}
+                  <div 
+                    className="fixed md:absolute z-50 bg-[#101119] border border-white/20 rounded-lg shadow-lg p-4 animate-fade-in-calendar md:animate-fade-in md:mt-2 md:left-0 md:transform-none left-1/2 transform -translate-x-1/2 w-[calc(100vw-2rem)] md:w-auto md:min-w-[320px] md:max-w-[400px] top-[50vh] md:top-auto -translate-y-1/2 md:translate-y-0" 
+                    ref={calendarRef}
                   >
-                    <span className={selectedDate ? '' : 'text-white/50'}>
-                      {selectedDate ? selectedDate.toLocaleDateString('es-ES') : 'Seleccionar'}
-                    </span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </button>
-                }
-              />
+                  <Calendar
+                    selectedDate={selectedDate}
+                    selectedDateRange={selectedDateRange}
+                    onDateSelect={handleDateSelect}
+                    onDateRangeChange={handleDateRangeChange}
+                    onDateChange={handleDateChange}
+                    onCancel={handleCalendarCancel}
+                    onConfirm={handleCalendarConfirm}
+                  />
+                  </div>
+                </>
+              )}
             </div>
             {/* Género - dropdown custom igual al de Tipo */}
             <div className="w-[90px] relative md:w-36 ml-5 md:ml-0">

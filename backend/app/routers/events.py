@@ -23,7 +23,9 @@ def read_events_root(
     genre: Optional[str] = None,
     genres: Optional[List[str]] = Query(None, alias="genres"),
     city: Optional[str] = None,
+    cities: Optional[List[str]] = Query(None, alias="cities"),
     date: Optional[date] = None,  # Compatibilidad con parámetro date
+    end_date: Optional[date] = Query(None, alias="end_date"),  # Nuevo parámetro para rango de fechas
     date_from: Optional[date] = Query(None, alias="date_from"),
     date_to: Optional[date] = Query(None, alias="date_to"),
     search: Optional[str] = None,
@@ -34,12 +36,20 @@ def read_events_root(
     Get events with filtering options (route without leading slash)
     """
     logger.info(f"GET /events request received (root route)")
-    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, genres={genres}, city={city}, date={date}, date_from={date_from}, date_to={date_to}, date_types={date_types}")
+    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, genres={genres}, city={city}, cities={cities}, date={date}, end_date={end_date}, date_from={date_from}, date_to={date_to}, date_types={date_types}")
     logger.info(f"Headers: {dict(request.headers)}")
-    # Si se proporciona una fecha específica, usarla como date_from y date_to
-    if date:
+    
+    # Procesar parámetros de fecha para rango
+    if date and end_date:
+        # Si tenemos date y end_date, usar como rango
+        date_from = date
+        date_to = end_date
+    elif date:
+        # Si solo tenemos date, usar como fecha específica
         date_from = date
         date_to = date
+    # Si no hay date pero hay end_date, date_from debe estar definido por el frontend
+    
     events = crud.get_events(
         db, 
         skip=skip, 
@@ -47,6 +57,7 @@ def read_events_root(
         genre=genre,
         genres=genres,
         city=city,
+        cities=cities,
         date_from=date_from,
         date_to=date_to,
         search=search,
@@ -62,7 +73,9 @@ def read_events(
     genre: Optional[str] = None,
     genres: Optional[List[str]] = Query(None, alias="genres"),
     city: Optional[str] = None,
+    cities: Optional[List[str]] = Query(None, alias="cities"),
     date: Optional[date] = None,  # Compatibilidad con parámetro date
+    end_date: Optional[date] = Query(None, alias="end_date"),  # Nuevo parámetro para rango de fechas
     date_from: Optional[date] = Query(None, alias="date_from"),
     date_to: Optional[date] = Query(None, alias="date_to"),
     search: Optional[str] = None,
@@ -73,12 +86,20 @@ def read_events(
     Get events with filtering options
     """
     logger.info(f"GET /events/ request received (with trailing slash)")
-    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, genres={genres}, city={city}, date={date}, date_from={date_from}, date_to={date_to}, date_types={date_types}")
+    logger.info(f"Query params: skip={skip}, limit={limit}, genre={genre}, genres={genres}, city={city}, cities={cities}, date={date}, end_date={end_date}, date_from={date_from}, date_to={date_to}, date_types={date_types}")
     logger.info(f"Headers: {dict(request.headers)}")
-    # Si se proporciona una fecha específica, usarla como date_from y date_to
-    if date:
+    
+    # Procesar parámetros de fecha para rango
+    if date and end_date:
+        # Si tenemos date y end_date, usar como rango
+        date_from = date
+        date_to = end_date
+    elif date:
+        # Si solo tenemos date, usar como fecha específica
         date_from = date
         date_to = date
+    # Si no hay date pero hay end_date, date_from debe estar definido por el frontend
+    
     events = crud.get_events(
         db, 
         skip=skip, 
@@ -86,6 +107,7 @@ def read_events(
         genre=genre,
         genres=genres,
         city=city,
+        cities=cities,
         date_from=date_from,
         date_to=date_to,
         search=search,
@@ -124,6 +146,7 @@ def get_nearby_events(
     genre: Optional[str] = None,
     genres: Optional[List[str]] = Query(None, alias="genres"),
     city: Optional[str] = None,
+    cities: Optional[List[str]] = Query(None, alias="cities"),
     date_from: Optional[date] = Query(None, alias="date_from"),
     date_to: Optional[date] = Query(None, alias="date_to"),
     search: Optional[str] = None,
@@ -134,7 +157,7 @@ def get_nearby_events(
     Get events within a certain radius of given coordinates
     """
     logger.info(f"GET /events/nearby request received")
-    logger.info(f"Query params: lat={lat}, lng={lng}, radius={radius}, skip={skip}, limit={limit}, genre={genre}, genres={genres}, city={city}, date_from={date_from}, date_to={date_to}, search={search}, date_types={date_types}")
+    logger.info(f"Query params: lat={lat}, lng={lng}, radius={radius}, skip={skip}, limit={limit}, genre={genre}, genres={genres}, city={city}, cities={cities}, date_from={date_from}, date_to={date_to}, search={search}, date_types={date_types}")
     logger.info(f"Headers: {dict(request.headers)}")
     
     # Validate coordinates
@@ -155,6 +178,7 @@ def get_nearby_events(
         genre=genre,
         genres=genres,
         city=city,
+        cities=cities,
         date_from=date_from,
         date_to=date_to,
         search=search,

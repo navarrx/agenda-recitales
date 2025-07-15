@@ -11,6 +11,7 @@ def get_events(
     genre: Optional[str] = None,
     genres: Optional[List[str]] = None,
     city: Optional[str] = None,
+    cities: Optional[List[str]] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     search: Optional[str] = None,
@@ -29,6 +30,8 @@ def get_events(
         query = query.filter(models.Event.genre.in_(genres))
     if city:
         query = query.filter(models.Event.city == city)
+    if cities:
+        query = query.filter(models.Event.city.in_(cities))
     if date_from:
         query = query.filter(func.date(models.Event.date) >= date_from)
     if date_to:
@@ -147,6 +150,7 @@ def get_nearby_events(
     genre: Optional[str] = None,
     genres: Optional[List[str]] = None,
     city: Optional[str] = None,
+    cities: Optional[List[str]] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     search: Optional[str] = None,
@@ -183,6 +187,8 @@ def get_nearby_events(
         query = query.filter(models.Event.genre.in_(genres))
     if city:
         query = query.filter(models.Event.city == city)
+    if cities:
+        query = query.filter(models.Event.city.in_(cities))
     if date_from:
         query = query.filter(func.date(models.Event.date) >= date_from)
     if date_to:
