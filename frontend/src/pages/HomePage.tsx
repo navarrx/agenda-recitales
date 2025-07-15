@@ -94,7 +94,7 @@ const HomePage = () => {
     fetchEvents();
   }, [isAdmin, navigate, fetchEvents]);
 
-  const upcomingEvents = events.filter(event => !event.is_featured).slice(0, 6);
+  const upcomingEvents = events.filter(event => event.is_featured).slice(0, 6);
 
   return (
     <Layout>
