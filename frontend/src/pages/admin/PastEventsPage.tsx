@@ -219,7 +219,7 @@ const PastEventsPage = () => {
                           <div>
                             <div className="text-sm font-medium text-white flex items-center gap-1">
                               {event.name}
-                              {event.is_featured && <Star className="w-4 h-4 text-yellow-400 ml-1" title="Destacado" />}
+                              {event.is_featured && <Star className="w-4 h-4 text-yellow-400 ml-1" />}
                             </div>
                             <div className="text-xs text-white/50">ID: {event.id}</div>
                           </div>
@@ -246,7 +246,6 @@ const PastEventsPage = () => {
                         <Link
                           to={`/admin/events/${event.id}`}
                           className="p-2 bg-[#1a48c4] text-white rounded-full hover:bg-[#1a48c4]/90 text-xs flex items-center justify-center"
-                          title="Editar evento"
                         >
                           <Edit2 className="w-4 h-4" />
                         </Link>
@@ -254,7 +253,6 @@ const PastEventsPage = () => {
                           onClick={() => handleDeleteEvent(event.id)}
                           className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 text-xs flex items-center justify-center"
                           disabled={isDeleting}
-                          title="Eliminar evento"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

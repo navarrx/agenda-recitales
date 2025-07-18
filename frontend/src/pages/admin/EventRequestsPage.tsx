@@ -207,7 +207,7 @@ const EventRequestsPage = () => {
                       <td className="px-4 py-3 text-white font-medium">
                         <div className="flex items-center gap-1">
                           {req.event_name}
-                          {req.status === 'accepted' && <Star className="w-4 h-4 text-green-400 ml-1" title="Solicitud aceptada" />}
+                          {req.status === 'accepted' && <Star className="w-4 h-4 text-green-400 ml-1" />}
                         </div>
                         <div className="text-xs text-white/50">ID: {req.id}</div>
                       </td>
@@ -233,7 +233,6 @@ const EventRequestsPage = () => {
                         <div className="flex flex-row gap-2 items-center">
                           <button
                             className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
-                            title="Ver detalles"
                             onClick={() => handleRowClick(req)}
                           >
                             <Eye className="h-4 w-4 text-white/80" />
@@ -244,7 +243,6 @@ const EventRequestsPage = () => {
                                 className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 text-xs flex items-center justify-center"
                                 onClick={() => handleStatusChange(req.id, 'accepted')}
                                 disabled={actionLoading === req.id}
-                                title="Aceptar solicitud"
                               >
                                 <Star className="w-4 h-4" />
                               </button>
@@ -252,7 +250,6 @@ const EventRequestsPage = () => {
                                 className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 text-xs flex items-center justify-center"
                                 onClick={() => handleStatusChange(req.id, 'discarded')}
                                 disabled={actionLoading === req.id}
-                                title="Rechazar solicitud"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -261,7 +258,6 @@ const EventRequestsPage = () => {
                           {(req.status === 'accepted' || req.status === 'discarded') && editingId !== req.id && (
                             <button
                               className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
-                              title="Editar estado"
                               onClick={() => handleEditClick(req.id, req.status)}
                             >
                               <Edit2 className="h-4 w-4 text-white/80" />
@@ -333,7 +329,6 @@ const EventRequestsPage = () => {
                     </div>
                     <button
                       className="p-2 bg-white/10 hover:bg-white/20 rounded ml-2"
-                      title="Ver detalles"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRowClick(req);
@@ -365,7 +360,6 @@ const EventRequestsPage = () => {
                     {(req.status === 'accepted' || req.status === 'discarded') && editingId !== req.id && (
                       <button
                         className="p-1 bg-white/10 hover:bg-white/20 rounded"
-                        title="Editar estado"
                         onClick={() => handleEditClick(req.id, req.status)}
                       >
                         <PencilSquareIcon className="h-5 w-5 text-white/80" />

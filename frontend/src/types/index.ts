@@ -53,6 +53,7 @@ export interface EventRequest {
   created_at: string;
   updated_at: string;
   image_url?: string;
+  genre: string;
 }
 
 export interface EventRequestCreate {
@@ -67,6 +68,7 @@ export interface EventRequestCreate {
   ticket_url: string;
   message?: string;
   image_url?: string;
+  genre: string;
 }
 
 export interface EventRequestStatusUpdate {

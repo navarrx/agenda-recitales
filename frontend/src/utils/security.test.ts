@@ -1,6 +1,5 @@
-/**
- * Pruebas para las utilidades de seguridad
- */
+// jest-environment node
+// Archivo de pruebas para utilidades de seguridad
 
 import { 
   sanitizeText, 
@@ -113,7 +112,8 @@ describe('sanitizeEventRequest', () => {
       venue: 'Test Venue',
       city: 'Test City',
       ticketUrl: 'https://example.com/tickets',
-      message: 'Test message'
+      message: 'Test message',
+      genre: 'Rock'
     };
 
     const result = sanitizeEventRequest(data);
@@ -132,7 +132,8 @@ describe('sanitizeEventRequest', () => {
       venue: 'Test Venue',
       city: 'Test City',
       ticketUrl: 'not-a-url',
-      message: 'Test message'
+      message: 'Test message',
+      genre: 'Pop'
     };
 
     const result = sanitizeEventRequest(data);
@@ -153,7 +154,8 @@ describe('sanitizeEventRequest', () => {
       venue: 'Test Venue',
       city: 'Test City',
       ticketUrl: 'https://example.com/tickets',
-      message: 'Test<script>message'
+      message: 'Test<script>message',
+      genre: 'Jazz'
     };
 
     const result = sanitizeEventRequest(data);
