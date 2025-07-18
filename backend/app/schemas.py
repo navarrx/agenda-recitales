@@ -65,12 +65,13 @@ class EventRequestBase(BaseModel):
     event_name: str = Field(..., min_length=2, max_length=200, description="Nombre del evento")
     artist: str = Field(..., min_length=2, max_length=100, description="Artista o banda")
     date: str = Field(..., description="Fecha del evento (YYYY-MM-DD)")
-    time: Optional[str] = Field(None, description="Hora del evento (HH:MM)")
+    time: str = Field(..., description="Hora del evento (HH:MM)")
     venue: str = Field(..., min_length=2, max_length=200, description="Lugar del evento")
     city: str = Field(..., min_length=2, max_length=100, description="Ciudad del evento")
     ticket_url: str = Field(..., description="URL de compra de entradas")
+    genre: str = Field(..., min_length=2, max_length=100, description="Género musical")
     message: Optional[str] = Field(None, max_length=1000, description="Información adicional")
-    image_url: Optional[str] = Field(None, description="URL de la imagen del evento")
+    image_url: str = Field(..., description="URL de la imagen del evento")
     
     @validator('name', 'event_name', 'artist', 'venue', 'city')
     def validate_text_fields(cls, v):
@@ -209,6 +210,7 @@ class EventRequest(BaseModel):
     venue: str
     city: str
     ticket_url: str
+    genre: Optional[str] = None
     message: Optional[str] = None
     image_url: Optional[str] = None
     status: str

@@ -5,9 +5,9 @@ import { getEvents, deleteEvent, deleteEventsBulk } from '../../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Event } from '../../types';
-import { Star, Edit2, Trash2, Clock } from 'lucide-react';
+import { Star, Edit2, Trash2 } from 'lucide-react';
 
-const AdminPage = () => {
+const PastEventsPage = () => {
   const [adminEvents, setAdminEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,6 @@ const AdminPage = () => {
   const [selectedEvents, setSelectedEvents] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [totalEvents, setTotalEvents] = useState(0);
-  const [showPast, setShowPast] = useState(false);
   const eventsPerPage = 10;
 
   useEffect(() => {
@@ -24,9 +23,30 @@ const AdminPage = () => {
       try {
         setLoading(true);
         const skip = (currentPage - 1) * eventsPerPage;
-        const response = await getEvents({},{ skip, limit: eventsPerPage, show_past: showPast });
-        setAdminEvents(response.items);
-        setTotalEvents(response.total);
+        // Forzar show_past=true
+        const response = await getEvents({}, { skip, limit: eventsPerPage, show_past: true });
+        // Filtrar solo eventos anteriores a hoy
+        const today = new Date();
+        const pastEvents = response.items.filter((event: Event) => new Date(event.date) < today);
+        setAdminEvents(pastEvents);
+        // Calcular el total real de eventos pasados
+        if (currentPage === 1) {
+          // Para la primera página, estimar el total real
+          const allPastEvents = [
+            ...pastEvents
+          ];
+          let nextSkip = skip + eventsPerPage;
+          let keepFetching = pastEvents.length === eventsPerPage;
+          while (keepFetching) {
+            // eslint-disable-next-line no-await-in-loop
+            const nextResponse = await getEvents({}, { skip: nextSkip, limit: eventsPerPage, show_past: true });
+            const nextPast = nextResponse.items.filter((event: Event) => new Date(event.date) < today);
+            allPastEvents.push(...nextPast);
+            nextSkip += eventsPerPage;
+            keepFetching = nextPast.length === eventsPerPage;
+          }
+          setTotalEvents(allPastEvents.length);
+        }
         setLoading(false);
       } catch (err) {
         console.error('Error fetching events:', err);
@@ -35,7 +55,7 @@ const AdminPage = () => {
       }
     };
     fetchEvents();
-  }, [currentPage, showPast]);
+  }, [currentPage]);
 
   const handleDeleteEvent = async (id: number) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer.')) {
@@ -81,10 +101,7 @@ const AdminPage = () => {
     if (window.confirm(confirmMessage)) {
       try {
         setIsDeleting(true);
-        console.log('Attempting to delete events:', selectedEvents);
         const result = await deleteEventsBulk(selectedEvents);
-        console.log('Delete result:', result);
-        
         if (result.deleted_count > 0) {
           setAdminEvents(adminEvents.filter(event => !selectedEvents.includes(event.id)));
           setSelectedEvents([]);
@@ -101,10 +118,6 @@ const AdminPage = () => {
     }
   };
 
-  // Eliminar slice de paginación local:
-  // const indexOfLastEvent = currentPage * eventsPerPage;
-  // const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  // const currentEvents = adminEvents.slice(indexOfFirstEvent, indexOfLastEvent);
   const currentEvents = adminEvents;
   const totalPages = Math.ceil(totalEvents / eventsPerPage);
 
@@ -116,22 +129,15 @@ const AdminPage = () => {
     <Layout>
       <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-white">
-          Panel de Administración
+          Eventos pasados
         </h1>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto items-center">
           <Link
-            to="/admin/past-events"
+            to="/admin"
             className="flex items-center gap-1 text-white/60 hover:text-[#1a48c4] transition-colors text-sm px-2 py-2 rounded-md"
             style={{ minWidth: 0 }}
           >
-            <Clock className="w-4 h-4 text-white/40" />
-            Fechas pasadas
-          </Link>
-          <Link
-            to="/admin/event-requests"
-            className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-all duration-300 text-center"
-          >
-            Solicitudes de eventos
+            Volver a eventos
           </Link>
           {selectedEvents.length > 0 && (
             <button
@@ -142,12 +148,6 @@ const AdminPage = () => {
               {isDeleting ? 'Eliminando...' : `Eliminar ${selectedEvents.length} eventos`}
             </button>
           )}
-          <Link
-            to="/admin/events/new"
-            className="px-4 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 transition-all duration-300 text-center"
-          >
-            Nuevo Evento
-          </Link>
         </div>
       </div>
 
@@ -370,7 +370,7 @@ const AdminPage = () => {
             />
           </svg>
           <h3 className="text-xl font-medium text-white mb-2">
-            No se encontraron eventos
+            No se encontraron eventos pasados
           </h3>
           <p className="text-white/80">
             Intenta cambiar los filtros o vuelve más tarde.
@@ -381,4 +381,4 @@ const AdminPage = () => {
   );
 };
 
-export default AdminPage; 
+export default PastEventsPage; 

@@ -30,6 +30,7 @@ def read_events_root(
     date_to: Optional[date] = Query(None, alias="date_to"),
     search: Optional[str] = None,
     date_types: Optional[List[str]] = Query(None, alias="date_types"),
+    show_past: bool = Query(False, description="Incluir eventos pasados"),
     db: Session = Depends(database.get_db)
 ):
     """
@@ -61,7 +62,8 @@ def read_events_root(
         date_from=date_from,
         date_to=date_to,
         search=search,
-        date_types=date_types
+        date_types=date_types,
+        show_past=show_past
     )
     return events
 
@@ -80,6 +82,7 @@ def read_events(
     date_to: Optional[date] = Query(None, alias="date_to"),
     search: Optional[str] = None,
     date_types: Optional[List[str]] = Query(None, alias="date_types"),
+    show_past: bool = Query(False, description="Incluir eventos pasados"),
     db: Session = Depends(database.get_db)
 ):
     """
@@ -111,7 +114,8 @@ def read_events(
         date_from=date_from,
         date_to=date_to,
         search=search,
-        date_types=date_types
+        date_types=date_types,
+        show_past=show_past
     )
     return events
 

@@ -4,7 +4,7 @@ import { EventRequest } from '../../types';
 import Layout from '../../components/layout/Layout';
 import { PencilSquareIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Star, Edit2, Eye, User, Trash2 } from 'lucide-react';
 import EventRequestDetailModal from '../../components/modals/EventRequestDetailModal';
 
 const statusLabels: Record<string, string> = {
@@ -169,10 +169,12 @@ const EventRequestsPage = () => {
           {/* Desktop table */}
           <div className="hidden sm:block bg-[#101119] rounded-lg shadow-md overflow-x-auto border border-white/10">
             <table className="min-w-full divide-y divide-white/10">
-              <thead className="bg-[#101119]">
+              <thead className="bg-gradient-to-r from-[#1a48c4]/30 via-[#101119] to-[#101119]">
                 <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Imagen</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Evento</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Artista</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Género</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Fecha</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Hora</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-white/80 uppercase">Lugar</th>
@@ -184,7 +186,7 @@ const EventRequestsPage = () => {
               <tbody className="bg-[#101119] divide-y divide-white/10">
                 {requests.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-10 text-center text-white/60 text-lg">
+                    <td colSpan={10} className="py-10 text-center text-white/60 text-lg">
                       No hay solicitudes para mostrar.
                     </td>
                   </tr>
@@ -192,81 +194,106 @@ const EventRequestsPage = () => {
                   requests.map((req) => (
                     <tr 
                       key={req.id} 
-                      className="hover:bg-white/5 transition-colors duration-200 cursor-pointer"
+                      className={`group transition-colors duration-200 hover:bg-white/10 cursor-pointer`}
                       onClick={() => handleRowClick(req)}
                     >
-                      <td className="px-4 py-3 text-white font-medium">{req.event_name}</td>
+                      <td className="px-4 py-3">
+                        {req.image_url ? (
+                          <img src={req.image_url} alt={req.event_name} className="w-10 h-10 rounded object-cover border border-white/10 shadow" />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-white/10 flex items-center justify-center text-white/30 text-lg">🎫</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-white font-medium">
+                        <div className="flex items-center gap-1">
+                          {req.event_name}
+                          {req.status === 'accepted' && <Star className="w-4 h-4 text-green-400 ml-1" title="Solicitud aceptada" />}
+                        </div>
+                        <div className="text-xs text-white/50">ID: {req.id}</div>
+                      </td>
                       <td className="px-4 py-3 text-white/80">{req.artist}</td>
+                      <td className="px-4 py-3">
+                        {req.genre ? <span className="text-xs text-yellow-300 font-semibold">{req.genre}</span> : <span className="text-xs text-white/40">-</span>}
+                      </td>
                       <td className="px-4 py-3 text-white/80">{formatDate(req.date)}</td>
                       <td className="px-4 py-3 text-white/80">{formatTime(req.date)}</td>
-                      <td className="px-4 py-3 text-white/80">{req.venue}, {req.city}</td>
-                      <td className="px-4 py-3 text-white/80">{req.name}</td>
+                      <td className="px-4 py-3 text-white/80">{req.venue}, <span className="text-xs text-white/40">{req.city}</span></td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-white/40" />
+                          <span className="text-white/80 text-xs">{req.name}</span>
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${req.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : req.status === 'accepted' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                           {statusLabels[req.status] || req.status}
                         </span>
                       </td>
                       <td className="px-4 py-3 space-x-2" onClick={e => e.stopPropagation()}>
-                        <button
-                          className="p-1 bg-white/10 hover:bg-white/20 rounded"
-                          title="Ver detalles"
-                          onClick={() => handleRowClick(req)}
-                        >
-                          <EyeIcon className="h-5 w-5 text-white/80" />
-                        </button>
-                        {req.status === 'pending' && editingId !== req.id && (
-                          <>
-                            <button
-                              className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
-                              onClick={() => handleStatusChange(req.id, 'accepted')}
-                              disabled={actionLoading === req.id}
-                            >
-                              {actionLoading === req.id ? 'Guardando...' : 'Aceptar'}
-                            </button>
-                            <button
-                              className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                              onClick={() => handleStatusChange(req.id, 'discarded')}
-                              disabled={actionLoading === req.id}
-                            >
-                              {actionLoading === req.id ? 'Guardando...' : 'Descartar'}
-                            </button>
-                          </>
-                        )}
-                        {(req.status === 'accepted' || req.status === 'discarded') && editingId !== req.id && (
+                        <div className="flex flex-row gap-2 items-center">
                           <button
-                            className="p-1 bg-white/10 hover:bg-white/20 rounded"
-                            title="Editar estado"
-                            onClick={() => handleEditClick(req.id, req.status)}
+                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+                            title="Ver detalles"
+                            onClick={() => handleRowClick(req)}
                           >
-                            <PencilSquareIcon className="h-5 w-5 text-white/80" />
+                            <Eye className="h-4 w-4 text-white/80" />
                           </button>
-                        )}
-                        {editingId === req.id && (
-                          <div className="flex items-center gap-2">
-                            <select
-                              className="px-2 py-1 rounded bg-[#101119] text-white border border-white/20 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a48c4]"
-                              value={newStatus || req.status}
-                              onChange={e => setNewStatus(e.target.value as 'pending' | 'accepted' | 'discarded')}
-                            >
-                              <option value="pending">Pendiente</option>
-                              <option value="accepted">Aceptado</option>
-                              <option value="discarded">Rechazado</option>
-                            </select>
+                          {req.status === 'pending' && editingId !== req.id && (
+                            <>
+                              <button
+                                className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 text-xs flex items-center justify-center"
+                                onClick={() => handleStatusChange(req.id, 'accepted')}
+                                disabled={actionLoading === req.id}
+                                title="Aceptar solicitud"
+                              >
+                                <Star className="w-4 h-4" />
+                              </button>
+                              <button
+                                className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 text-xs flex items-center justify-center"
+                                onClick={() => handleStatusChange(req.id, 'discarded')}
+                                disabled={actionLoading === req.id}
+                                title="Rechazar solicitud"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          {(req.status === 'accepted' || req.status === 'discarded') && editingId !== req.id && (
                             <button
-                              className="px-2 py-1 bg-[#1a48c4] text-white rounded hover:bg-[#1a48c4]/90 text-xs"
-                              onClick={() => handleEditSave(req.id)}
-                              disabled={actionLoading === req.id}
+                              className="p-2 bg-white/10 hover:bg-white/20 rounded-full"
+                              title="Editar estado"
+                              onClick={() => handleEditClick(req.id, req.status)}
                             >
-                              Guardar
+                              <Edit2 className="h-4 w-4 text-white/80" />
                             </button>
-                            <button
-                              className="px-2 py-1 bg-white/10 text-white rounded hover:bg-white/20 text-xs"
-                              onClick={handleEditCancel}
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        )}
+                          )}
+                          {editingId === req.id && (
+                            <div className="flex items-center gap-2">
+                              <select
+                                className="px-2 py-1 rounded bg-[#101119] text-white border border-white/20 text-xs focus:outline-none focus:ring-2 focus:ring-[#1a48c4]"
+                                value={newStatus || req.status}
+                                onChange={e => setNewStatus(e.target.value as 'pending' | 'accepted' | 'discarded')}
+                              >
+                                <option value="pending">Pendiente</option>
+                                <option value="accepted">Aceptado</option>
+                                <option value="discarded">Rechazado</option>
+                              </select>
+                              <button
+                                className="px-2 py-1 bg-[#1a48c4] text-white rounded hover:bg-[#1a48c4]/90 text-xs"
+                                onClick={() => handleEditSave(req.id)}
+                                disabled={actionLoading === req.id}
+                              >
+                                Guardar
+                              </button>
+                              <button
+                                className="px-2 py-1 bg-white/10 text-white rounded hover:bg-white/20 text-xs"
+                                onClick={handleEditCancel}
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

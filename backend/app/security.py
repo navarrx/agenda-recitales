@@ -192,6 +192,9 @@ def sanitize_event_request_data(data: dict) -> dict:
             sanitized['image_url'] = None
             logger.info("image_url es None")
     
+    if 'genre' in data:
+        sanitized['genre'] = sanitize_text(data['genre'], 100)
+    
     # La fecha no necesita sanitización
     if 'date' in data:
         sanitized['date'] = data['date']

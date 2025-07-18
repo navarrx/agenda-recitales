@@ -15,13 +15,15 @@ def get_events(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     search: Optional[str] = None,
-    date_types: Optional[List[str]] = None
+    date_types: Optional[List[str]] = None,
+    show_past: bool = False
 ):
     query = db.query(models.Event)
     
     # Por defecto, solo mostrar eventos futuros o de hoy
-    today = datetime.now().date()
-    query = query.filter(func.date(models.Event.date) >= today)
+    if not show_past and not date_from and not date_to:
+        today = datetime.now().date()
+        query = query.filter(func.date(models.Event.date) >= today)
     
     # Apply filters
     if genre:

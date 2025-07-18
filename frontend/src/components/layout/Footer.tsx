@@ -13,7 +13,7 @@ const Footer = () => {
           <div className="slide-up">
             <div className="flex items-center mb-4">
               <span className="text-2xl font-bold text-white">
-                <span className="text-white">ABC1</span>
+                <span className="text-white">abc1</span>
               </span>
             </div>
             <p className="text-white/80 max-w-md leading-relaxed">
@@ -63,7 +63,7 @@ const Footer = () => {
         
         <div className="border-t border-white/10 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-white/60 text-sm text-center sm:text-left">
-            &copy; {currentYear} ABC1. Todos los derechos reservados.
+            &copy; {currentYear} abc1. Todos los derechos reservados.
           </p>
           <div className="mt-4 sm:mt-0">
             <ul className="flex flex-wrap space-x-5 justify-center">

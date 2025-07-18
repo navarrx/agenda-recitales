@@ -18,6 +18,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
     venue: '',
     city: '',
     ticketUrl: '',
+    genre: '', // <-- nuevo campo
     message: ''
   });
   const [loading, setLoading] = useState(false);
@@ -101,6 +102,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
         venue: sanitized.venue,
         city: sanitized.city,
         ticket_url: sanitized.ticketUrl,
+        genre: sanitized.genre, // <-- nuevo campo
         message: sanitized.message,
         image_url: finalImageUrl || undefined,
       });
@@ -117,6 +119,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
         venue: '',
         city: '',
         ticketUrl: '',
+        genre: '', // <-- nuevo campo
         message: ''
       });
       setFieldErrors({});
@@ -156,10 +159,9 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
         if (date <= now) return 'La fecha debe ser futura';
         break;
       case 'time':
-        if (value) {
-          const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-          if (!timeRegex.test(value)) return 'El formato de hora debe ser HH:MM (ej: 20:30)';
-        }
+        if (!value) return 'La hora es requerida';
+        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timeRegex.test(value)) return 'El formato de hora debe ser HH:MM (ej: 20:30)';
         break;
       case 'venue':
         if (!value || value.length < 2) return 'El lugar debe tener al menos 2 caracteres';
@@ -172,6 +174,10 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
       case 'ticketUrl':
         if (!value) return 'La URL de entradas es requerida';
         if (!validateUrl(value)) return 'La URL de entradas no es válida';
+        break;
+      case 'genre':
+        if (!value || value.length < 2) return 'El género debe tener al menos 2 caracteres';
+        if (!validateLength(value, 100)) return 'El género no puede exceder 100 caracteres';
         break;
       case 'message':
         if (value && !validateLength(value, 1000)) return 'El mensaje no puede exceder 1000 caracteres';
@@ -323,6 +329,27 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
               </div>
             </div>
 
+            {/* Campo Género */}
+            <div>
+              <label className="block text-white/80 text-sm font-medium mb-1">
+                Género musical
+              </label>
+              <input
+                type="text"
+                name="genre"
+                value={formData.genre}
+                onChange={handleChange}
+                className={`input w-full bg-white/10 text-white placeholder-white/50 border-white/20 ${
+                  fieldErrors.genre ? 'border-red-500' : ''
+                }`}
+                placeholder="Ej: Rock, Pop, Electrónica..."
+                required
+              />
+              {fieldErrors.genre && (
+                <p className="text-red-400 text-xs mt-1">{fieldErrors.genre}</p>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-white/80 text-sm font-medium mb-1">
@@ -344,7 +371,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
               </div>
               <div>
                 <label className="block text-white/80 text-sm font-medium mb-1">
-                  Hora del evento (opcional)
+                  Hora del evento
                 </label>
                 <input
                   type="time"
@@ -355,6 +382,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
                     fieldErrors.time ? 'border-red-500' : ''
                   }`}
                   placeholder="20:30"
+                  required
                 />
                 {fieldErrors.time && (
                   <p className="text-red-400 text-xs mt-1">{fieldErrors.time}</p>
@@ -442,7 +470,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
 
             <div>
               <label className="block text-white/80 text-sm font-medium mb-1">
-                Imagen del evento (opcional)
+                Imagen del evento
               </label>
               <input
                 type="file"
@@ -450,6 +478,7 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
                 onChange={handleImageChange}
                 className="hidden"
                 id="event-image-upload"
+                required
               />
               <label
                 htmlFor="event-image-upload"
@@ -473,6 +502,9 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
                   </div>
                 )}
               </label>
+              {!imageFile && (
+                <p className="text-red-400 text-xs mt-1">La imagen del evento es obligatoria.</p>
+              )}
               <p className="text-white/60 text-sm mt-1">
                 Agrega una imagen representativa del evento. Se mostrará en la agenda cuando sea aprobado.
               </p>

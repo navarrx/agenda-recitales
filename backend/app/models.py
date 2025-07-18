@@ -52,7 +52,8 @@ class EventRequest(Base):
     image_url = Column(String, nullable=True)
     status = Column(String, default="pending")
     created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now()) 
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    genre = Column(String, nullable=True)
 
 class Venue(Base):
     __tablename__ = "venues"

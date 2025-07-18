@@ -172,14 +172,20 @@ const EventRequestDetailModal = ({
                     <p className="text-white font-medium">{eventRequest.city}</p>
                   </div>
                   <div>
+                    <label className="text-sm text-white/60">Género</label>
+                    <p className="text-white font-medium">{eventRequest.genre || 'No especificado'}</p>
+                  </div>
+                  <div>
                     <label className="text-sm text-white/60">Link de entradas</label>
                     <a 
                       href={eventRequest.ticket_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-[#1a48c4] hover:text-[#1a48c4]/80 underline break-all"
+                      className="inline-flex items-center gap-2 text-[#1a48c4] hover:text-[#1a48c4]/80 underline max-w-full truncate bg-white/5 px-2 py-1 rounded transition-colors"
+                      style={{ wordBreak: 'break-all' }}
                     >
-                      {eventRequest.ticket_url}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7v7m0 0L10 21l-7-7 11-11z" /></svg>
+                      <span className="truncate">{eventRequest.ticket_url}</span>
                     </a>
                   </div>
                 </div>

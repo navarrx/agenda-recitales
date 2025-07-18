@@ -9,6 +9,7 @@ import EventFormPage from './pages/admin/EventFormPage';
 import EmbeddedAgenda from '@/pages/EmbeddedAgenda';
 import Login from './pages/Login';
 import EventRequestsPage from './pages/admin/EventRequestsPage';
+import PastEventsPage from './pages/admin/PastEventsPage';
 
 function App() {
   return (
@@ -48,6 +49,14 @@ function App() {
           element={
             <ProtectedRoute>
               <EventRequestsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/past-events"
+          element={
+            <ProtectedRoute>
+              <PastEventsPage />
             </ProtectedRoute>
           }
         />

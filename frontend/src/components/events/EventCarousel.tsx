@@ -16,7 +16,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
   const [contentWidth, setContentWidth] = useState(0);
   const currentX = useRef(0);
   const totalDistance = useRef(0);
-  const baseDuration = 60; // Base duration in seconds
+  const baseDuration = 90; // Base duration in seconds
 
   // Calculate container and content widths
   useEffect(() => {

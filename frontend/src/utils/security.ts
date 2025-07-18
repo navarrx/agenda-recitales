@@ -117,6 +117,7 @@ export function sanitizeEventRequest(data: {
   venue: string;
   city: string;
   ticketUrl: string;
+  genre: string;
   message?: string;
 }): {
   sanitized: any;
@@ -135,6 +136,7 @@ export function sanitizeEventRequest(data: {
     venue: sanitizeText(data.venue),
     city: sanitizeText(data.city),
     ticketUrl: sanitizeUrl(data.ticketUrl),
+    genre: sanitizeText(data.genre),
     message: data.message ? sanitizeText(data.message) : ''
   };
   
@@ -191,6 +193,13 @@ export function sanitizeEventRequest(data: {
   
   if (!validateLength(sanitized.city, 100)) {
     errors.push('La ciudad no puede exceder 100 caracteres');
+  }
+  
+  if (!sanitized.genre || sanitized.genre.length < 2) {
+    errors.push('El género debe tener al menos 2 caracteres');
+  }
+  if (!validateLength(sanitized.genre, 100)) {
+    errors.push('El género no puede exceder 100 caracteres');
   }
   
   if (!validateUrl(sanitized.ticketUrl)) {

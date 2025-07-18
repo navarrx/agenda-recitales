@@ -60,10 +60,10 @@ apiClient.interceptors.response.use(
 
 export const getEvents = async (
   filters: EventFilters = {},
-  pagination: PaginationParams = { skip: 0, limit: 12 }
+  pagination: PaginationParams & { show_past?: boolean } = { skip: 0, limit: 12 }
 ): Promise<EventListResponse> => {
   const { genre, city, dateFrom, dateTo, search, dateTypes } = filters;
-  const { skip, limit } = pagination;
+  const { skip, limit, show_past } = pagination;
 
   const params = new URLSearchParams();
   params.append('skip', skip.toString());
@@ -77,6 +77,7 @@ export const getEvents = async (
   if (dateTypes && dateTypes.length > 0) {
     dateTypes.forEach((type) => params.append('date_types', type));
   }
+  if (show_past !== undefined) params.append('show_past', show_past ? 'true' : 'false');
 
   const response = await apiClient.get(`/events?${params.toString()}`);
   return response.data;
