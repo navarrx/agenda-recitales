@@ -56,7 +56,7 @@ const Header = () => {
         
         <nav className="hidden md:flex items-center space-x-6">
           <NavLink to="/">Inicio</NavLink>
-          <NavLink to="/events">Eventos</NavLink>
+          <NavLink to="/events">Fechas</NavLink>
           {isAuthenticated && <NavLink to="/admin">Admin</NavLink>}
           {isAuthenticated && (
             <button
@@ -92,7 +92,7 @@ const Header = () => {
         <div className="md:hidden slide-down">
           <div className="px-4 py-4 space-y-3 bg-[#101119] shadow-md">
             <MobileNavLink to="/" onClick={() => setIsMobileMenuOpen(false)}>Inicio</MobileNavLink>
-            <MobileNavLink to="/events" onClick={() => setIsMobileMenuOpen(false)}>Eventos</MobileNavLink>
+            <MobileNavLink to="/events" onClick={() => setIsMobileMenuOpen(false)}>Fechas</MobileNavLink>
             {isAuthenticated && (
               <>
                 <MobileNavLink to="/admin" onClick={() => setIsMobileMenuOpen(false)}>Admin</MobileNavLink>
