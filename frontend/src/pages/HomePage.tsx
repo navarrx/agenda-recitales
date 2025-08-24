@@ -281,7 +281,7 @@ const HomePage = () => {
               className="text-center mb-16"
             >
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                Fechas destacadas
+                Destacadas
               </h2>
               <div className="w-24 h-1 bg-[#1a48c4] mx-auto rounded-full" />
             </motion.div>
@@ -353,7 +353,7 @@ const HomePage = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-4xl md:text-5xl font-bold text-white">
-                    Próximos
+                    Próximas
                   </h2>
                   <div className="w-24 h-1 bg-[#1a48c4] mt-4" />
                 </div>
@@ -433,7 +433,7 @@ const HomePage = () => {
                   viewport={{ once: true }}
                   className="text-lg text-white/90 mb-6"
                 >
-                  Lleva Billboard contigo a todas partes. Descarga la app oficial y no te pierdas ningún evento.
+                  Lleva Billboard contigo a todas partes. Descarga la app oficial y no te pierdas de ninguna fecha.
                 </motion.p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center md:items-start w-full">
                   <a 
@@ -503,7 +503,7 @@ const HomePage = () => {
               viewport={{ once: true }}
               className="text-2xl md:text-3xl font-bold text-white mb-4"
             >
-              No te pierdas ningún evento
+              No te pierdas de nada
             </motion.h2>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -512,7 +512,7 @@ const HomePage = () => {
               viewport={{ once: true }}
               className="text-lg text-white/90 mb-8"
             >
-              Suscríbete a nuestra newsletter y recibe notificaciones sobre los próximas fechas en tu ciudad.
+              Suscríbete a nuestra newsletter y recibe notificaciones sobre las próximas fechas en tu ciudad.
             </motion.p>
             <form className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
               <input 
