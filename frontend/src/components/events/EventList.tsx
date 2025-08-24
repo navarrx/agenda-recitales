@@ -87,7 +87,7 @@ const EventList = () => {
                 disabled={loading}
                 className="px-6 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 disabled:bg-white/20 transition-colors"
               >
-                {loading ? 'Cargando...' : 'Cargar más eventos'}
+                {loading ? 'Cargando...' : 'Cargar más fechas'}
               </button>
             </div>
           )}
