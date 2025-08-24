@@ -206,7 +206,7 @@ const HomePage = () => {
                 transition={{ duration: 1, delay: 0.5 }}
                 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight text-white"
               >
-                Descubre las mejores fechas musicales
+                Acá están todas las fechas.
               </motion.h1>
               <motion.p 
                 initial={{ opacity: 0, y: 30 }}
@@ -214,8 +214,8 @@ const HomePage = () => {
                 transition={{ duration: 1, delay: 0.7 }}
                 className="text-xl md:text-2xl mb-12 max-w-2xl leading-relaxed text-white/80"
               >
-                Encuentra recitales, conciertos y festivales en tu ciudad. 
-                Filtra por género, fecha o lugar y nunca más te pierdas un show.
+                Encuentra recitales, festivales y shows en tu ciudad. 
+                Filtra por género, ubicación y nunca más te pierdas de nada.
               </motion.p>
               <motion.div 
                 initial={{ opacity: 0, y: 30 }}
