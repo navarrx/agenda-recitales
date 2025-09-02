@@ -28,8 +28,71 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageAdjusted, setImageAdjusted] = useState(false);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const cropImageToSquare = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        try {
+          const width = img.width;
+          const height = img.height;
+          const size = Math.min(width, height);
+          const startX = Math.floor((width - size) / 2);
+          const startY = Math.floor((height - size) / 2);
+
+          const canvas = document.createElement('canvas');
+          const targetSize = Math.min(size, 800); // limitar tamaño máximo a 800x800
+          canvas.width = targetSize;
+          canvas.height = targetSize;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            URL.revokeObjectURL(url);
+            return reject(new Error('No se pudo inicializar el canvas'));
+          }
+
+          // Dibujar recorte cuadrado centrado y escalar a targetSize
+          ctx.drawImage(
+            img,
+            startX,
+            startY,
+            size,
+            size,
+            0,
+            0,
+            targetSize,
+            targetSize
+          );
+
+          const mimeType = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg';
+          canvas.toBlob(
+            (blob) => {
+              URL.revokeObjectURL(url);
+              if (!blob) return reject(new Error('No se pudo generar la imagen'));
+              const squaredFile = new File([blob], file.name.replace(/(\.[^.]+)?$/, (_m, ext) => ext || '.jpg'), {
+                type: mimeType,
+                lastModified: Date.now(),
+              });
+              resolve(squaredFile);
+            },
+            mimeType,
+            0.9
+          );
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          reject(err);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('No se pudo cargar la imagen'));
+      };
+      img.src = url;
+    });
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validar tipo de archivo
@@ -43,16 +106,31 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
         setError('El archivo es demasiado grande. Máximo 5MB permitido.');
         return;
       }
-      
-      setImageFile(file);
+
       setError(null);
-      
-      // Crear preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+
+      try {
+        // Recortar automáticamente a 1:1 si no es cuadrada
+        const squared = await cropImageToSquare(file);
+        setImageFile(squared);
+        setImageAdjusted(true);
+
+        // Crear preview del archivo cuadrado
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setImagePreview(ev.target?.result as string);
+        };
+        reader.readAsDataURL(squared);
+      } catch (cropErr) {
+        // Si falla el recorte por alguna razón, usar el archivo original
+        setImageFile(file);
+        setImageAdjusted(false);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setImagePreview(ev.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -506,8 +584,14 @@ const EventRequestModal = ({ isOpen, onClose }: EventRequestModalProps) => {
                 <p className="text-red-400 text-xs mt-1">La imagen del evento es obligatoria.</p>
               )}
               <p className="text-white/60 text-sm mt-1">
+                Debe ser cuadrada (1:1). Si no lo es, la ajustamos automáticamente.
+              </p>
+              <p className="text-white/60 text-sm mt-1">
                 Agrega una imagen representativa del evento. Se mostrará en la agenda cuando sea aprobado.
               </p>
+              {imageFile && imageAdjusted && (
+                <p className="text-green-400 text-xs mt-1">La imagen fue ajustada a formato 1:1 automáticamente.</p>
+              )}
             </div>
 
             {error && (
