@@ -6,6 +6,7 @@ import { useEventStore } from '../store/eventStore';
 import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent } from 'framer-motion';
 import '../styles/HomePage.css';
 import EventCarousel from '../components/events/EventCarousel';
+import HeroBanner from '../components/HeroBanner';
 import { Event } from '../types';
 
 const HomePage = () => {
@@ -99,170 +100,8 @@ const HomePage = () => {
   return (
     <Layout>
       <div ref={containerRef} className="relative overflow-hidden">
-        {/* Hero Section with Experimental Design */}
-        <motion.section 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.5 }}
-          className="relative min-h-screen flex items-center justify-center overflow-hidden"
-        >
-          {/* Video and overlays are now clipped together */}
-          <div className="absolute inset-0 overflow-hidden">
-            {/* Video background with advanced effects */}
-            <motion.div 
-              className="absolute inset-0 overflow-hidden"
-            >
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="absolute w-full h-full object-cover"
-                style={{ 
-                  transform: `scale(1.2) rotate(${useTransform(mouseX, [-1, 1], [-1, 1])}deg)`,
-                  filter: 'blur(1px) brightness(0.9)',
-                }}
-              >
-                <source src="/videos/hero-background.mp4" type="video/mp4" />
-              </video>
-            </motion.div>
-            {/* Subtle black overlay for text contrast */}
-            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-          </div>
-
-          {/* Interactive floating elements - Removed for cleaner look */}
-          <div className="absolute inset-0">
-            {[...Array(20)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute bg-white/5 rounded-full"
-                style={{
-                  width: Math.random() * 300 + 50,
-                  height: Math.random() * 300 + 50,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  x: useTransform(mouseX, [-1, 1], [-20, 20]),
-                  y: useTransform(mouseY, [-1, 1], [-20, 20]),
-                }}
-                animate={{
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 360],
-                }}
-                transition={{
-                  duration: 10 + Math.random() * 10,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Floating Plus Signs */}
-          <div className="absolute inset-0 pointer-events-none">
-            {[...Array(120)].map((_, i) => (
-              <motion.div
-                key={`plus-${i}`}
-                className="absolute text-white/40 text-xl md:text-3xl lg:text-4xl font-bold"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                }}
-                animate={{
-                  x: [0, Math.random() * 100 - 50, 0],
-                  y: [0, Math.random() * 100 - 50, 0],
-                  rotate: [0, 180, 360],
-                  opacity: [0.2, 0.6, 0.2],
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{
-                  duration: 12 + Math.random() * 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: Math.random() * 3,
-                }}
-              >
-                +
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Main content with 3D effect */}
-          <motion.div 
-            style={{ y: contentY }}
-            className="relative z-10 px-4 py-10 sm:px-6 sm:py-16 md:py-32 md:px-16 max-w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-5xl mx-auto"
-          >
-            <motion.div
-              style={{
-                x: useTransform(mouseX, [-1, 1], [-20, 20]),
-                y: useTransform(mouseY, [-1, 1], [-20, 20]),
-                rotateX: useTransform(mouseY, [-1, 1], [5, -5]),
-                rotateY: useTransform(mouseX, [-1, 1], [-5, 5]),
-              }}
-              className="perspective-1000 bg-black/10 backdrop-blur-sm rounded-2xl p-4 sm:p-8 md:p-12"
-            >
-              <motion.h1 
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.5 }}
-                className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight text-white"
-              >
-                Descubre las mejores fechas musicales
-              </motion.h1>
-              <motion.p 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.7 }}
-                className="text-xl md:text-2xl mb-12 max-w-2xl leading-relaxed text-white/80"
-              >
-                Encuentra recitales, conciertos y festivales en tu ciudad. 
-                Filtra por género, fecha o lugar y nunca más te pierdas un show.
-              </motion.p>
-              <motion.div 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.9 }}
-              >
-                <Link 
-                  to="/events" 
-                  className="group relative overflow-hidden bg-[#1a48c4] text-white px-8 py-4 rounded-full inline-flex items-center text-lg font-medium hover:bg-[#1a48c4]/90 transition-colors"
-                >
-                  <span className="relative z-10">Explorar Fechas</span>
-                  <motion.svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-6 w-6 ml-3 relative z-10"
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </motion.svg>
-                </Link>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-
-          {/* Scroll indicator */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center"
-            >
-              <motion.div
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="w-1 h-3 bg-white/50 rounded-full mt-2"
-              />
-            </motion.div>
-          </motion.div>
-        </motion.section>
+        {/* Nuevo Hero Banner con carrusel de eventos destacados */}
+        <HeroBanner />
 
         {/* Featured Events Section with 3D Cards */}
         <motion.section 
@@ -281,7 +120,7 @@ const HomePage = () => {
               className="text-center mb-16"
             >
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                Fechas destacadas
+                Destacadas
               </h2>
               <div className="w-24 h-1 bg-[#1a48c4] mx-auto rounded-full" />
             </motion.div>
@@ -353,7 +192,7 @@ const HomePage = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-4xl md:text-5xl font-bold text-white">
-                    Próximos
+                    Próximas
                   </h2>
                   <div className="w-24 h-1 bg-[#1a48c4] mt-4" />
                 </div>
@@ -433,7 +272,7 @@ const HomePage = () => {
                   viewport={{ once: true }}
                   className="text-lg text-white/90 mb-6"
                 >
-                  Lleva Billboard contigo a todas partes. Descarga la app oficial y no te pierdas ningún evento.
+                  Lleva Billboard contigo a todas partes. Descarga la app oficial y no te pierdas de ninguna fecha.
                 </motion.p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center md:items-start w-full">
                   <a 
@@ -503,7 +342,7 @@ const HomePage = () => {
               viewport={{ once: true }}
               className="text-2xl md:text-3xl font-bold text-white mb-4"
             >
-              No te pierdas ningún evento
+              No te pierdas de nada
             </motion.h2>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -512,7 +351,7 @@ const HomePage = () => {
               viewport={{ once: true }}
               className="text-lg text-white/90 mb-8"
             >
-              Suscríbete a nuestra newsletter y recibe notificaciones sobre los próximas fechas en tu ciudad.
+              Suscríbete a nuestra newsletter y recibe notificaciones sobre las próximas fechas en tu ciudad.
             </motion.p>
             <form className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
               <input 

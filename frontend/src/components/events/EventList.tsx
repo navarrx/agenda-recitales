@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useEventStore } from '../../store/eventStore';
 import EventCard from './EventCard';
 import EventListItem from './EventListItem';
@@ -23,6 +23,50 @@ const EventList = () => {
   } = useEventStore();
 
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
+
+  // Callback para cargar más eventos
+  const handleLoadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      loadMoreEvents();
+    }
+  }, [loading, hasMore, loadMoreEvents]);
+
+  // Configurar Intersection Observer para scroll infinito
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !loading) {
+          handleLoadMore();
+        }
+      },
+      {
+        rootMargin: '100px', // Cargar cuando esté a 100px del final
+        threshold: 0.1,
+      }
+    );
+
+    observerRef.current = observer;
+
+    if (loadingRef.current) {
+      observer.observe(loadingRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [hasMore, loading, handleLoadMore]);
+
+  // Re-observar el elemento cuando cambie la lista
+  useEffect(() => {
+    if (observerRef.current && loadingRef.current) {
+      observerRef.current.observe(loadingRef.current);
+    }
+  }, [events]);
 
   useEffect(() => {
     fetchEvents();
@@ -80,16 +124,36 @@ const EventList = () => {
             </div>
           )}
           
+          {/* Indicador de carga para scroll infinito */}
           {hasMore && (
-            <div className="mt-8 flex justify-center">
-              <button
-                onClick={loadMoreEvents}
-                disabled={loading}
-                className="px-6 py-2 bg-[#1a48c4] text-white rounded-md hover:bg-[#1a48c4]/90 disabled:bg-white/20 transition-colors"
-              >
-                {loading ? 'Cargando...' : 'Cargar más eventos'}
-              </button>
-            </div>
+            <motion.div
+              ref={loadingRef}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-8 flex justify-center items-center py-4"
+            >
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                  <span className="text-white/70 text-sm">Cargando más eventos...</span>
+                </div>
+              ) : (
+                <div className="h-6" /> // Espacio invisible para trigger del observer
+              )}
+            </motion.div>
+          )}
+
+          {/* Mensaje cuando no hay más eventos */}
+          {!hasMore && events.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-8 text-center py-4"
+            >
+              <p className="text-white/60 text-sm">
+                Has visto todos los eventos disponibles
+              </p>
+            </motion.div>
           )}
         </>
       ) : loading ? (

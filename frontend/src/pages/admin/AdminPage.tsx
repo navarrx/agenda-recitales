@@ -128,6 +128,12 @@ const AdminPage = () => {
             Fechas pasadas
           </Link>
           <Link
+            to="/admin/hero-events"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-300 text-center flex items-center gap-2"
+          >
+            Eventos Hero
+          </Link>
+          <Link
             to="/admin/event-requests"
             className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-all duration-300 text-center"
           >

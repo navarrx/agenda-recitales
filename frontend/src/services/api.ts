@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { Event, EventFilters, EventListResponse, PaginationParams, EventRequest, EventRequestCreate, EventRequestStatusUpdate } from '../types';
+import { Event, EventFilters, EventListResponse, PaginationParams, EventRequest, EventRequestCreate, EventRequestStatusUpdate, HeroEvent } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL;
 console.log('[API_URL]', API_URL);
 
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -88,6 +88,11 @@ export const getEvent = async (id: number): Promise<Event> => {
   return response.data;
 };
 
+export const getEventWithHeroInfo = async (id: number): Promise<{ event: Event; hero_info: any }> => {
+  const response = await apiClient.get(`/events/${id}/with-hero-info`);
+  return response.data;
+};
+
 export const getGenres = async (): Promise<string[]> => {
   const response = await apiClient.get('/events/filters/genres');
   console.log('[API] getGenres - response:', response.data);
@@ -149,4 +154,34 @@ export const uploadPendingImage = async (file: File): Promise<{ success: boolean
   });
   
   return response.data;
+}; 
+
+// Nuevas funciones para Hero Events
+export const getHeroEvents = async (): Promise<HeroEvent[]> => {
+  const response = await apiClient.get('/hero-events');
+  return response.data;
+};
+
+export const createHeroEvent = async (
+  eventId: number, 
+  image: File
+): Promise<HeroEvent> => {
+  const formData = new FormData();
+  formData.append('event_id', eventId.toString());
+  formData.append('image', image);
+  
+  const response = await apiClient.post('/hero-events', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+export const reorderHeroEvents = async (heroEventIds: number[]): Promise<void> => {
+  await apiClient.put('/hero-events/reorder', { hero_event_ids: heroEventIds });
+};
+
+export const deleteHeroEvent = async (heroEventId: number): Promise<void> => {
+  await apiClient.delete(`/hero-events/${heroEventId}`);
 }; 

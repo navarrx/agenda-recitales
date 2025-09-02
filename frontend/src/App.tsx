@@ -10,6 +10,8 @@ import EmbeddedAgenda from '@/pages/EmbeddedAgenda';
 import Login from './pages/Login';
 import EventRequestsPage from './pages/admin/EventRequestsPage';
 import PastEventsPage from './pages/admin/PastEventsPage';
+import HeroEventsPage from './pages/admin/HeroEventsPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -60,6 +62,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/hero-events"
+          element={
+            <ProtectedRoute>
+              <HeroEventsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AuthProvider>
   );

@@ -2,7 +2,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
-import { getEvent, createEvent, updateEvent } from '../../services/api';
+import { getEvent, getEventWithHeroInfo, createEvent, updateEvent } from '../../services/api';
 import { Event } from '../../types';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import * as Label from '@radix-ui/react-label';
@@ -22,6 +22,7 @@ const emptyEvent: Omit<Event, 'id' | 'created_at' | 'updated_at'> = {
   image_url: '',
   ticket_url: '',
   is_featured: false,
+  hero_active: false, // Nuevo campo para hero banner
   latitude: null,
   longitude: null,
   date_types: [],
@@ -35,6 +36,8 @@ const EventFormPage = () => {
   
   const [formData, setFormData] = useState<typeof emptyEvent>(emptyEvent);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
+  const [heroInfo, setHeroInfo] = useState<any>(null);
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +49,7 @@ const EventFormPage = () => {
       if (isEditMode) {
         try {
           setLoading(true);
-          const eventData = await getEvent(parseInt(id, 10));
+          const { event: eventData, hero_info } = await getEventWithHeroInfo(parseInt(id, 10));
           
           // Format date for datetime-local input
           const eventDate = new Date(eventData.date);
@@ -61,6 +64,10 @@ const EventFormPage = () => {
             latitude: eventData.latitude ?? null,
             longitude: eventData.longitude ?? null
           });
+          
+          // Set hero info if available
+          setHeroInfo(hero_info);
+          
           setLoading(false);
         } catch (err) {
           console.error('Error fetching event:', err);
@@ -119,6 +126,26 @@ const EventFormPage = () => {
     }
   };
 
+  const handleHeroImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        setError('Por favor selecciona un archivo de imagen válido (JPEG, PNG, GIF, etc.)');
+        return;
+      }
+      
+      // Validar tamaño (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('El archivo es demasiado grande. Máximo 10MB permitido.');
+        return;
+      }
+      
+      setHeroImageFile(file);
+      setError(null);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
@@ -126,8 +153,8 @@ const EventFormPage = () => {
       setSubmitting(true);
       setError(null);
       
-      // Si hay una imagen seleccionada, usar el endpoint con imagen
-      if (imageFile) {
+      // Si hay una imagen (principal) o una imagen de hero seleccionada, usar el endpoint con imagen
+      if (imageFile || heroImageFile) {
         const formDataToSend = new FormData();
         
         // Agregar todos los campos del formulario
@@ -140,6 +167,7 @@ const EventFormPage = () => {
         formDataToSend.append('description', formData.description);
         formDataToSend.append('ticket_url', formData.ticket_url || '');
         formDataToSend.append('is_featured', formData.is_featured.toString());
+        formDataToSend.append('hero_active', formData.hero_active?.toString() || 'false');
         
         if (formData.latitude !== null) {
           formDataToSend.append('latitude', formData.latitude.toString());
@@ -154,8 +182,15 @@ const EventFormPage = () => {
           formDataToSend.append('ticket_price', formData.ticket_price.toString());
         }
         
-        // Agregar la imagen
-        formDataToSend.append('image', imageFile);
+        // Agregar la imagen principal si se seleccionó
+        if (imageFile) {
+          formDataToSend.append('image', imageFile);
+        }
+        
+        // Agregar la imagen del hero si se seleccionó
+        if (heroImageFile) {
+          formDataToSend.append('hero_image', heroImageFile);
+        }
         
         const token = localStorage.getItem('adminToken');
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -708,6 +743,70 @@ const EventFormPage = () => {
                 Destacar evento en la página principal
               </Label.Root>
             </div>
+
+            <div className="flex items-center space-x-3">
+              <Switch.Root
+                id="hero_active"
+                checked={formData.hero_active || false}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, hero_active: checked }))}
+                className="w-11 h-6 bg-white/20 rounded-full relative data-[state=checked]:bg-purple-600 transition-colors duration-200"
+              >
+                <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform duration-200 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[22px]" />
+              </Switch.Root>
+              <Label.Root htmlFor="hero_active" className="text-sm text-white/80 cursor-pointer">
+                Destacar en Hero Banner
+              </Label.Root>
+            </div>
+
+            {/* Campo para imagen del hero banner */}
+            {formData.hero_active && (
+              <div className="space-y-2">
+                <Label.Root htmlFor="hero_image" className="text-sm text-white/80">
+                  Imagen para Hero Banner (formato horizontal recomendado)
+                </Label.Root>
+                
+                {/* Mostrar imagen existente si está en hero banner */}
+                {heroInfo && heroInfo.hero_image_url && (
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <p className="text-xs text-white/60 mb-2">Imagen actual del hero banner:</p>
+                    <div className="aspect-[21/9] bg-gradient-to-r from-purple-900 to-blue-900 rounded-lg overflow-hidden relative">
+                      <img
+                        src={heroInfo.hero_image_url}
+                        alt="Hero banner actual"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/20" />
+                      <div className="absolute bottom-2 left-2 text-white">
+                        <p className="text-xs font-medium">{formData.artist}</p>
+                        <p className="text-xs opacity-80">
+                          {new Date(formData.date).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-white/40 mt-2">
+                      Posición en el banner: {heroInfo.order_position}
+                    </p>
+                  </div>
+                )}
+                
+                <input
+                  type="file"
+                  id="hero_image"
+                  accept="image/*"
+                  onChange={handleHeroImageChange}
+                  className="block w-full text-sm text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer cursor-pointer"
+                />
+                <p className="text-xs text-white/40">
+                  {heroInfo && heroInfo.hero_image_url 
+                    ? "Sube una nueva imagen para reemplazar la actual. " 
+                    : ""}Formato horizontal (16:9) recomendado. Máximo 10MB.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Botones de acción */}

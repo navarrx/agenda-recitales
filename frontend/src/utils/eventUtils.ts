@@ -48,3 +48,25 @@ export const getTicketButtonText = (event: Event): string => {
     return 'Ver entradas';
   }
 }; 
+
+/**
+ * Verifica si un evento está finalizado basado en su fecha
+ * @param eventDate - Fecha del evento (string o Date)
+ * @returns true si el evento ya pasó, false si es futuro o hoy
+ */
+export const isEventFinished = (eventDate: string | Date): boolean => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Resetear a inicio del día
+  
+  const eventDateObj = typeof eventDate === 'string' ? new Date(eventDate) : eventDate;
+  return eventDateObj < today;
+};
+
+/**
+ * Filtra eventos futuros (incluyendo hoy)
+ * @param events - Array de eventos con propiedad date
+ * @returns Array con solo eventos futuros
+ */
+export const filterFutureEvents = <T extends { date: string | Date }>(events: T[]): T[] => {
+  return events.filter(event => !isEventFinished(event.date));
+}; 

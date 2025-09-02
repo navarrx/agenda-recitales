@@ -11,6 +11,7 @@ export interface Event {
   image_url: string | null;
   ticket_url: string | null;
   is_featured: boolean;
+  hero_active?: boolean; // Nuevo campo para eventos hero
   latitude: number | null;
   longitude: number | null;
   created_at: string;
@@ -22,6 +23,7 @@ export interface Event {
 export interface EventListResponse {
   items: Event[];
   total: number;
+  hasMore: boolean;
 }
 
 export interface EventFilters {
@@ -73,4 +75,23 @@ export interface EventRequestCreate {
 
 export interface EventRequestStatusUpdate {
   status: string;
+}
+
+// Nuevos tipos para Hero Events
+export interface HeroEvent {
+  id: number;
+  event_id: number;
+  hero_image_url: string;
+  order_position: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  event: Event;
+}
+
+export interface HeroEventCreate {
+  event_id: number;
+  hero_image_url: string;
+  order_position: number;
+  is_active: boolean;
 } 

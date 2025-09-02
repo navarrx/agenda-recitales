@@ -17,7 +17,7 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-white/80 max-w-md leading-relaxed">
-              Tu agenda de eventos musicales favorita. Encuentra los mejores recitales en tu ciudad 
+              Tu agenda favorita de fechas. Encuentra los mejores recitales en tu ciudad 
               y disfruta de la música en vivo.
             </p>
             <div className="flex space-x-4 mt-6">
@@ -44,13 +44,13 @@ const Footer = () => {
               Contacto
             </h3>
             <p className="text-white/80 mb-4">
-              ¿Tienes un evento que quieras agregar a nuestra agenda?
+              ¿Tienes una fecha que quieras agregar a nuestra agenda?
             </p>
             <button
               onClick={() => setShowModal(true)}
               className="btn bg-[#1a48c4] text-white hover:bg-[#1a48c4]/90 mb-4"
             >
-              Solicitar agregar evento
+              Agregar fecha
             </button>
             <p className="flex items-center text-white/80">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#1a48c4]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
