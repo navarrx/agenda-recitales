@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, Float
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, Float, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from .database import Base
 from datetime import datetime
 from sqlalchemy.dialects import postgresql
@@ -25,6 +26,10 @@ class Event(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     date_types = Column(postgresql.ARRAY(String), nullable=True)
     ticket_price = Column(Integer, nullable=True)
+    hero_active = Column(Boolean, default=False)
+    
+    # Relationship with HeroEvent
+    hero_events = relationship("HeroEvent", back_populates="event")
 
 class User(Base):
     __tablename__ = "users"
@@ -66,4 +71,18 @@ class Venue(Base):
     location = Column(String, nullable=True)  # Campo adicional para ubicación descriptiva
     city = Column(String, index=True, nullable=True)
     created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now()) 
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+class HeroEvent(Base):
+    __tablename__ = "hero_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    hero_image_url = Column(String, nullable=False)
+    order_position = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    
+    # Relationship with Event
+    event = relationship("Event", back_populates="hero_events") 

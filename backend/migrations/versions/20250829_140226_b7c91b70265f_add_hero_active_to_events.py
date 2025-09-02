@@ -1,0 +1,28 @@
+"""add_hero_active_to_events
+
+Revision ID: b7c91b70265f
+Revises: c2f2c9a042c1
+Create Date: 2025-08-29 14:02:26.149651
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = 'b7c91b70265f'
+down_revision: Union[str, None] = 'c2f2c9a042c1'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    pass
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    pass

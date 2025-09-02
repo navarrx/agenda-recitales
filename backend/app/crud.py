@@ -352,4 +352,76 @@ def bulk_create_venues(db: Session, venues: List[schemas.VenueCreate]):
     for venue in db_venues:
         db.refresh(venue)
     
-    return db_venues 
+    return db_venues
+
+
+# Hero Event CRUD operations
+def create_hero_event(db: Session, hero_event: schemas.HeroEventCreate) -> models.HeroEvent:
+    """
+    Create a new hero event
+    """
+    # Validate that we don't exceed the limit of 5 events
+    current_count = db.query(models.HeroEvent).filter(models.HeroEvent.is_active == True).count()
+    if current_count >= 5:
+        raise ValueError("Máximo 5 eventos permitidos en el hero banner")
+    
+    # Get the next order_position
+    max_position = db.query(func.max(models.HeroEvent.order_position)).scalar() or 0
+    new_position = max_position + 1
+    
+    db_hero_event = models.HeroEvent(
+        event_id=hero_event.event_id,
+        hero_image_url=hero_event.hero_image_url,
+        order_position=new_position,
+        is_active=hero_event.is_active
+    )
+    db.add(db_hero_event)
+    db.commit()
+    db.refresh(db_hero_event)
+    return db_hero_event
+
+def get_hero_events(db: Session) -> List[models.HeroEvent]:
+    """
+    Get all active hero events ordered by position with event information
+    """
+    return db.query(models.HeroEvent).filter(
+        models.HeroEvent.is_active == True
+    ).order_by(models.HeroEvent.order_position).all()
+
+def get_hero_event_by_id(db: Session, hero_event_id: int) -> Optional[models.HeroEvent]:
+    """
+    Get a specific hero event by ID
+    """
+    return db.query(models.HeroEvent).filter(models.HeroEvent.id == hero_event_id).first()
+
+def update_hero_event_order(db: Session, hero_event_ids: List[int]) -> bool:
+    """
+    Reorder hero events based on the provided list of IDs
+    """
+    try:
+        for index, hero_event_id in enumerate(hero_event_ids, 1):
+            db.query(models.HeroEvent).filter(
+                models.HeroEvent.id == hero_event_id
+            ).update({"order_position": index})
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        raise e
+
+def delete_hero_event(db: Session, hero_event_id: int) -> bool:
+    """
+    Delete a hero event and return True if successful
+    """
+    hero_event = db.query(models.HeroEvent).filter(models.HeroEvent.id == hero_event_id).first()
+    if hero_event:
+        db.delete(hero_event)
+        db.commit()
+        return True
+    return False
+
+def get_hero_events_count(db: Session) -> int:
+    """
+    Get the current count of active hero events
+    """
+    return db.query(models.HeroEvent).filter(models.HeroEvent.is_active == True).count()

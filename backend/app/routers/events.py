@@ -193,14 +193,55 @@ def get_nearby_events(
 @router.get("/{event_id}", response_model=schemas.Event)
 def read_event(event_id: int, db: Session = Depends(database.get_db)):
     """
-    Get a specific event by ID
+    Get a specific event by ID with hero event information
     """
     logger.info(f"GET /events/{event_id} request received")
     
     db_event = crud.get_event(db, event_id=event_id)
     if db_event is None:
         raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Check if this event has a hero event associated
+    hero_events = crud.get_hero_events(db)
+    for hero_event in hero_events:
+        if hero_event.event_id == event_id:
+            # Set hero_active to True if this event is in hero banner
+            db_event.hero_active = True
+            break
+    
     return db_event
+
+@router.get("/{event_id}/with-hero-info")
+def read_event_with_hero_info(event_id: int, db: Session = Depends(database.get_db)):
+    """
+    Get a specific event by ID with complete hero event information
+    """
+    logger.info(f"GET /events/{event_id}/with-hero-info request received")
+    
+    db_event = crud.get_event(db, event_id=event_id)
+    if db_event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Check if this event has a hero event associated
+    hero_events = crud.get_hero_events(db)
+    hero_info = None
+    
+    for hero_event in hero_events:
+        if hero_event.event_id == event_id:
+            # Set hero_active to True if this event is in hero banner
+            db_event.hero_active = True
+            hero_info = {
+                "id": hero_event.id,
+                "hero_image_url": hero_event.hero_image_url,
+                "order_position": hero_event.order_position,
+                "is_active": hero_event.is_active
+            }
+            break
+    
+    return {
+        "event": db_event,
+        "hero_info": hero_info
+    }
 
 @router.post("", response_model=schemas.Event)
 def create_event_root(
@@ -386,6 +427,8 @@ async def create_event_with_image(
     longitude: Optional[float] = Form(None),
     date_types: Optional[str] = Form(None),  # Se recibirá como string JSON
     ticket_price: Optional[int] = Form(None),
+    hero_active: bool = Form(False),
+    hero_image: Optional[UploadFile] = File(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_admin_user)
@@ -428,7 +471,8 @@ async def create_event_with_image(
             latitude=latitude,
             longitude=longitude,
             date_types=parsed_date_types,
-            ticket_price=ticket_price
+            ticket_price=ticket_price,
+            hero_active=hero_active
         )
         
         # Subir imagen si se proporciona
@@ -468,6 +512,53 @@ async def create_event_with_image(
         # Crear el evento en la base de datos
         created_event = crud.create_event(db=db, event=event_data)
         
+        # Si es hero_active y hay hero_image, crear hero event
+        if hero_active and hero_image:
+            try:
+                # Validar que sea una imagen
+                if not hero_image.content_type or not hero_image.content_type.startswith('image/'):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="El archivo de imagen hero debe ser una imagen"
+                    )
+                
+                # Validar tamaño (máximo 10MB)
+                hero_file_content = await hero_image.read()
+                if len(hero_file_content) > 10 * 1024 * 1024:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="El archivo hero es demasiado grande. Máximo 10MB permitido."
+                    )
+                
+                # Subir imagen hero a S3
+                hero_image_url = s3_service.upload_image(
+                    file_content=hero_file_content,
+                    file_name=f"hero_{hero_image.filename}",
+                    content_type=hero_image.content_type
+                )
+                
+                if not hero_image_url:
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Error al subir la imagen hero"
+                    )
+                
+                # Crear hero event
+                hero_event_data = schemas.HeroEventCreate(
+                    event_id=created_event.id,
+                    hero_image_url=hero_image_url,
+                    order_position=0,  # Se calculará automáticamente
+                    is_active=True
+                )
+                
+                crud.create_hero_event(db, hero_event_data)
+                logger.info(f"Hero event created for event: {created_event.id}")
+                
+            except Exception as e:
+                logger.error(f"Error creating hero event: {e}")
+                # No fallar la creación del evento principal si falla el hero
+                pass
+        
         logger.info(f"Event created successfully with image: {created_event.id}")
         return created_event
         
@@ -497,6 +588,8 @@ async def update_event_with_image(
     longitude: Optional[float] = Form(None),
     date_types: Optional[str] = Form(None),
     ticket_price: Optional[int] = Form(None),
+    hero_active: Optional[bool] = Form(None),
+    hero_image: Optional[UploadFile] = File(None),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_admin_user)
@@ -545,7 +638,8 @@ async def update_event_with_image(
             latitude=latitude,
             longitude=longitude,
             date_types=parsed_date_types,
-            ticket_price=ticket_price
+            ticket_price=ticket_price,
+            hero_active=hero_active
         )
         
         # Subir nueva imagen si se proporciona
@@ -587,6 +681,71 @@ async def update_event_with_image(
         
         # Actualizar el evento en la base de datos
         updated_event = crud.update_event(db, event_id=event_id, event=event_data)
+        
+        # Manejar hero_image si se proporciona
+        if hero_image:
+            try:
+                # Validar que sea una imagen
+                if not hero_image.content_type or not hero_image.content_type.startswith('image/'):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="El archivo de imagen hero debe ser una imagen"
+                    )
+                
+                # Validar tamaño (máximo 10MB)
+                hero_file_content = await hero_image.read()
+                if len(hero_file_content) > 10 * 1024 * 1024:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="El archivo hero es demasiado grande. Máximo 10MB permitido."
+                    )
+                
+                # Buscar hero event existente
+                existing_hero_events = crud.get_hero_events(db)
+                existing_hero_event = None
+                for he in existing_hero_events:
+                    if he.event_id == event_id:
+                        existing_hero_event = he
+                        break
+                
+                # Subir nueva imagen hero a S3
+                hero_image_url = s3_service.upload_image(
+                    file_content=hero_file_content,
+                    file_name=f"hero_{hero_image.filename}",
+                    content_type=hero_image.content_type
+                )
+                
+                if not hero_image_url:
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Error al subir la imagen hero"
+                    )
+                
+                if existing_hero_event:
+                    # Actualizar hero event existente
+                    # Eliminar imagen anterior si existe
+                    if existing_hero_event.hero_image_url:
+                        s3_service.delete_image(existing_hero_event.hero_image_url)
+                    
+                    # Actualizar con nueva imagen
+                    existing_hero_event.hero_image_url = hero_image_url
+                    db.commit()
+                    logger.info(f"Hero event updated for event: {event_id}")
+                else:
+                    # Crear nuevo hero event
+                    hero_event_data = schemas.HeroEventCreate(
+                        event_id=event_id,
+                        hero_image_url=hero_image_url,
+                        order_position=0,  # Se calculará automáticamente
+                        is_active=True
+                    )
+                    crud.create_hero_event(db, hero_event_data)
+                    logger.info(f"Hero event created for event: {event_id}")
+                
+            except Exception as e:
+                logger.error(f"Error handling hero image: {e}")
+                # No fallar la actualización del evento principal si falla el hero
+                pass
         
         logger.info(f"Event updated successfully: {event_id}")
         return updated_event

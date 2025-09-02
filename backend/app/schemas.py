@@ -255,4 +255,36 @@ class VenueList(BaseModel):
     total: int
 
     class Config:
+        orm_mode = True
+
+# Hero Event Schemas
+class HeroEventBase(BaseModel):
+    event_id: int
+    hero_image_url: str
+    order_position: Optional[int] = None
+    is_active: bool = True
+
+class HeroEventCreate(HeroEventBase):
+    pass
+
+class HeroEventUpdate(BaseModel):
+    event_id: Optional[int] = None
+    hero_image_url: Optional[str] = None
+    order_position: Optional[int] = None
+    is_active: Optional[bool] = None
+
+class HeroEvent(HeroEventBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    event: Event
+
+    class Config:
+        orm_mode = True
+
+class HeroEventList(BaseModel):
+    items: List[HeroEvent]
+    total: int
+
+    class Config:
         orm_mode = True 
