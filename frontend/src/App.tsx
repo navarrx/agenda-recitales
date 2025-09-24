@@ -7,6 +7,7 @@ import EventDetailPage from './pages/events/EventDetailPage';
 import AdminPage from './pages/admin/AdminPage';
 import EventFormPage from './pages/admin/EventFormPage';
 import EmbeddedAgenda from '@/pages/EmbeddedAgenda';
+import EmbeddedAgenda2 from '@/pages/EmbeddedAgenda2';
 import Login from './pages/Login';
 import EventRequestsPage from './pages/admin/EventRequestsPage';
 import PastEventsPage from './pages/admin/PastEventsPage';
@@ -46,6 +47,7 @@ function App() {
           }
         />
         <Route path="/embed" element={<EmbeddedAgenda />} />
+        <Route path="/embed-2" element={<EmbeddedAgenda2 />} />
         <Route
           path="/admin/event-requests"
           element={
