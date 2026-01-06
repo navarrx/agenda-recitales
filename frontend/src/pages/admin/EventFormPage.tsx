@@ -33,7 +33,7 @@ const EventFormPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditMode = !!id;
-  
+
   const [formData, setFormData] = useState<typeof emptyEvent>(emptyEvent);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
@@ -50,13 +50,13 @@ const EventFormPage = () => {
         try {
           setLoading(true);
           const { event: eventData, hero_info } = await getEventWithHeroInfo(parseInt(id, 10));
-          
+
           // Format date for datetime-local input
           const eventDate = new Date(eventData.date);
           const formattedDate = new Date(
             eventDate.getTime() - eventDate.getTimezoneOffset() * 60000
           ).toISOString().slice(0, 16);
-          
+
           setFormData({
             ...eventData,
             date: formattedDate,
@@ -64,10 +64,10 @@ const EventFormPage = () => {
             latitude: eventData.latitude ?? null,
             longitude: eventData.longitude ?? null
           });
-          
+
           // Set hero info if available
           setHeroInfo(hero_info);
-          
+
           setLoading(false);
         } catch (err) {
           console.error('Error fetching event:', err);
@@ -94,7 +94,7 @@ const EventFormPage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
@@ -114,13 +114,13 @@ const EventFormPage = () => {
         setError('Por favor selecciona un archivo de imagen válido (JPEG, PNG, GIF, etc.)');
         return;
       }
-      
+
       // Validar tamaño (máximo 10MB)
       if (file.size > 10 * 1024 * 1024) {
         setError('El archivo es demasiado grande. Máximo 10MB permitido.');
         return;
       }
-      
+
       setImageFile(file);
       setError(null);
     }
@@ -134,13 +134,13 @@ const EventFormPage = () => {
         setError('Por favor selecciona un archivo de imagen válido (JPEG, PNG, GIF, etc.)');
         return;
       }
-      
+
       // Validar tamaño (máximo 10MB)
       if (file.size > 10 * 1024 * 1024) {
         setError('El archivo es demasiado grande. Máximo 10MB permitido.');
         return;
       }
-      
+
       setHeroImageFile(file);
       setError(null);
     }
@@ -148,15 +148,15 @@ const EventFormPage = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSubmitting(true);
       setError(null);
-      
+
       // Si hay una imagen (principal) o una imagen de hero seleccionada, usar el endpoint con imagen
       if (imageFile || heroImageFile) {
         const formDataToSend = new FormData();
-        
+
         // Agregar todos los campos del formulario
         formDataToSend.append('name', formData.name);
         formDataToSend.append('artist', formData.artist);
@@ -165,10 +165,11 @@ const EventFormPage = () => {
         formDataToSend.append('city', formData.city);
         formDataToSend.append('venue', formData.venue);
         formDataToSend.append('description', formData.description);
+        formDataToSend.append('genre', formData.genre || '');
         formDataToSend.append('ticket_url', formData.ticket_url || '');
         formDataToSend.append('is_featured', formData.is_featured.toString());
         formDataToSend.append('hero_active', formData.hero_active?.toString() || 'false');
-        
+
         if (formData.latitude !== null) {
           formDataToSend.append('latitude', formData.latitude.toString());
         }
@@ -181,23 +182,23 @@ const EventFormPage = () => {
         if (formData.ticket_price !== null) {
           formDataToSend.append('ticket_price', formData.ticket_price.toString());
         }
-        
+
         // Agregar la imagen principal si se seleccionó
         if (imageFile) {
           formDataToSend.append('image', imageFile);
         }
-        
+
         // Agregar la imagen del hero si se seleccionó
         if (heroImageFile) {
           formDataToSend.append('hero_image', heroImageFile);
         }
-        
+
         const token = localStorage.getItem('adminToken');
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        
+
         console.log('Debug - Token:', token ? 'Presente' : 'Ausente');
         console.log('Debug - Base URL:', baseUrl);
-        
+
         if (isEditMode) {
           const response = await fetch(`${baseUrl}/events/${id}/with-image`, {
             method: 'PUT',
@@ -206,7 +207,7 @@ const EventFormPage = () => {
             },
             body: formDataToSend
           });
-          
+
           if (!response.ok) {
             const errorText = await response.text();
             console.error('Debug - Error response:', errorText);
@@ -220,7 +221,7 @@ const EventFormPage = () => {
             },
             body: formDataToSend
           });
-          
+
           if (!response.ok) {
             const errorText = await response.text();
             console.error('Debug - Error response:', errorText);
@@ -235,7 +236,7 @@ const EventFormPage = () => {
           await createEvent(formData);
         }
       }
-      
+
       navigate('/admin');
     } catch (err) {
       console.error('Error saving event:', err);
@@ -253,9 +254,9 @@ const EventFormPage = () => {
     try {
       setGeocodingStatus('loading');
       setError(null);
-      
+
       const searchQuery = `${formData.location}, ${formData.city}, Argentina`;
-      
+
       // Intentar con Google Maps API primero
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
       if (apiKey) {
@@ -263,7 +264,7 @@ const EventFormPage = () => {
           const response = await fetch(
             `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery)}&key=${apiKey}&region=ar`
           );
-          
+
           if (response.ok) {
             const data = await response.json();
             if (data.status === 'OK' && data.results && data.results.length > 0) {
@@ -281,14 +282,14 @@ const EventFormPage = () => {
           console.log('Google Maps API falló, intentando con Nominatim...');
         }
       }
-      
+
       // Fallback a Nominatim (OpenStreetMap)
       try {
         const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`);
-        
+
         if (response.ok) {
           const data = await response.json();
-          
+
           if (data && data.length > 0) {
             setFormData(prev => ({
               ...prev,
@@ -302,13 +303,13 @@ const EventFormPage = () => {
       } catch (err) {
         console.log('Nominatim falló, intentando con ciudad...');
       }
-      
+
       // Último intento: solo con la ciudad
       try {
         const cityQuery = `${formData.city}, Argentina`;
         const cityResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityQuery)}&format=json&limit=1`);
         const cityData = await cityResponse.json();
-        
+
         if (cityData && cityData.length > 0) {
           setFormData(prev => ({
             ...prev,
@@ -321,9 +322,9 @@ const EventFormPage = () => {
       } catch (err) {
         console.log('Geocodificación de ciudad falló');
       }
-      
+
       throw new Error('No se encontraron coordenadas para la ubicación');
-      
+
     } catch (err) {
       console.error('Error geocoding location:', err);
       setError('No se pudieron obtener las coordenadas. Intente ingresarlas manualmente o use otra dirección.');
@@ -371,7 +372,7 @@ const EventFormPage = () => {
             <h2 className="text-xl font-semibold text-white/90 border-b border-white/10 pb-2">
               Información Básica
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label.Root className="text-sm font-medium text-white/80">
@@ -424,7 +425,7 @@ const EventFormPage = () => {
             <h2 className="text-xl font-semibold text-white/90 border-b border-white/10 pb-2">
               Tipo de Evento y Precios
             </h2>
-            
+
             <div className="space-y-4">
               <Label.Root className="text-sm font-medium text-white/80">
                 Tipo de fecha
@@ -493,7 +494,7 @@ const EventFormPage = () => {
             <h2 className="text-xl font-semibold text-white/90 border-b border-white/10 pb-2">
               Ubicación
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label.Root className="text-sm font-medium text-white/80">
@@ -617,7 +618,7 @@ const EventFormPage = () => {
             <h2 className="text-xl font-semibold text-white/90 border-b border-white/10 pb-2">
               Enlaces y Multimedia
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -633,7 +634,7 @@ const EventFormPage = () => {
                     ?
                   </button>
                 </div>
-                
+
                 {/* Campo de subida de archivo */}
                 <div className="space-y-2">
                   <input
@@ -661,7 +662,7 @@ const EventFormPage = () => {
                     )}
                   </label>
                 </div>
-                
+
                 {/* Mostrar imagen actual si existe y no se ha seleccionado una nueva */}
                 {formData.image_url && !imageFile && (
                   <div className="mt-2">
@@ -673,7 +674,7 @@ const EventFormPage = () => {
                     />
                   </div>
                 )}
-                
+
                 {/* Vista previa de la nueva imagen */}
                 {imageFile && (
                   <div className="mt-2">
@@ -708,7 +709,7 @@ const EventFormPage = () => {
             <h2 className="text-xl font-semibold text-white/90 border-b border-white/10 pb-2">
               Descripción
             </h2>
-            
+
             <div className="space-y-2">
               <Label.Root className="text-sm font-medium text-white/80">
                 Descripción del evento
@@ -729,7 +730,7 @@ const EventFormPage = () => {
             <h2 className="text-xl font-semibold text-white/90 border-b border-white/10 pb-2">
               Configuración
             </h2>
-            
+
             <div className="flex items-center space-x-3">
               <Switch.Root
                 id="is_featured"
@@ -764,7 +765,7 @@ const EventFormPage = () => {
                 <Label.Root htmlFor="hero_image" className="text-sm text-white/80">
                   Imagen para Hero Banner (formato horizontal recomendado)
                 </Label.Root>
-                
+
                 {/* Mostrar imagen existente si está en hero banner */}
                 {heroInfo && heroInfo.hero_image_url && (
                   <div className="bg-white/5 rounded-lg p-3 border border-white/10">
@@ -792,7 +793,7 @@ const EventFormPage = () => {
                     </p>
                   </div>
                 )}
-                
+
                 <input
                   type="file"
                   id="hero_image"
@@ -801,8 +802,8 @@ const EventFormPage = () => {
                   className="block w-full text-sm text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer cursor-pointer"
                 />
                 <p className="text-xs text-white/40">
-                  {heroInfo && heroInfo.hero_image_url 
-                    ? "Sube una nueva imagen para reemplazar la actual. " 
+                  {heroInfo && heroInfo.hero_image_url
+                    ? "Sube una nueva imagen para reemplazar la actual. "
                     : ""}Formato horizontal (16:9) recomendado. Máximo 10MB.
                 </p>
               </div>
@@ -837,11 +838,11 @@ const EventFormPage = () => {
 
       {/* Modal de información de imagen */}
       {showImageModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setShowImageModal(false)}
         >
-          <div 
+          <div
             className="bg-[#101119] rounded-xl shadow-2xl border border-white/10 max-w-md w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
@@ -858,7 +859,7 @@ const EventFormPage = () => {
                 </svg>
               </button>
             </div>
-            
+
             <div className="space-y-4 text-white/80">
               <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                 <h4 className="font-medium text-green-400 mb-2">✅ Funcionalidad:</h4>
@@ -868,15 +869,15 @@ const EventFormPage = () => {
                   <li>• <strong>URL automática:</strong> Se genera y guarda la URL automáticamente</li>
                 </ul>
               </div>
-              
+
               <div className="bg-white/5 rounded-lg p-4">
                 <h4 className="font-medium text-white mb-2">📐 Aspecto recomendado:</h4>
                 <p className="text-sm">
-                  <strong>Aspect ratio:</strong> 1:1.1 (ancho:alto)<br/>
+                  <strong>Aspect ratio:</strong> 1:1.1 (ancho:alto)<br />
                   <span className="text-white/60">Casi cuadrado pero un poco más alto</span>
                 </p>
               </div>
-              
+
               <div className="bg-white/5 rounded-lg p-4">
                 <h4 className="font-medium text-white mb-2">📏 Dimensiones:</h4>
                 <ul className="text-sm space-y-1">
@@ -886,7 +887,7 @@ const EventFormPage = () => {
                   <li>• <strong>Tamaño máximo:</strong> 10MB</li>
                 </ul>
               </div>
-              
+
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
                 <h4 className="font-medium text-blue-400 mb-2">💡 Nota importante:</h4>
                 <p className="text-sm text-blue-300">
@@ -894,7 +895,7 @@ const EventFormPage = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => setShowImageModal(false)}

@@ -415,7 +415,7 @@ def get_cities(db: Session = Depends(database.get_db)):
 async def create_event_with_image(
     name: str = Form(...),
     artist: str = Form(...),
-    genre: str = Form(...),
+    genre: Optional[str] = Form(None),
     date: str = Form(...),  # Se recibirá como string y se parseará
     location: str = Form(...),
     city: str = Form(...),
